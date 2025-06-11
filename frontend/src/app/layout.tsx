@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import localFont from "next/font/local";
+import CookieConsent from "./CookieConsent";
 
 export const metadata: Metadata = {
   title: "Unmute by Kyutai",
@@ -39,13 +39,10 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/pretty-print-json@3.0/dist/css/pretty-print-json.dark-mode.css"
         />
       </head>
-      <body>{children}</body>
-      {/*
-      To debug Google Analytics, add debugMode={true} here and go to the Tag Assistant:
-      https://tagassistant.google.com/
-      Make sure you don't use an adblocker for localhost, as it will block the GA script.
-      */}
-      <GoogleAnalytics gaId="G-MLN0BSWF97" />
+      <body>
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }

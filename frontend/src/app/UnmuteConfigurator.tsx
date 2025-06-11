@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import VoiceAttribution from "./VoiceAttribution";
-import VoiceButton from "./VoiceButton";
+import SquareButton from "./SquareButton";
 import Modal from "./Modal";
 import { ArrowUpRight } from "lucide-react";
 import VoiceUpload from "./VoiceUpload";
@@ -262,7 +262,7 @@ const UnmuteConfigurator = ({
             <div className="grid grid-flow-row grid-cols-2 md:grid-cols-3 gap-3">
               {voices &&
                 voices.map((voice) => (
-                  <VoiceButton
+                  <SquareButton
                     key={voice.source.path_on_server}
                     onClick={() => {
                       setConfig({
@@ -280,9 +280,10 @@ const UnmuteConfigurator = ({
                         ? "primary"
                         : "secondary"
                     }
+                    extraClasses="bg-gray md:bg-black"
                   >
                     {"/ " + getVoiceName(voice) + " /"}
-                  </VoiceButton>
+                  </SquareButton>
                 ))}
               {voiceCloningUp && (
                 <VoiceUpload

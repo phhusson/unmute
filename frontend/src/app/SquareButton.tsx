@@ -1,26 +1,31 @@
 import React from "react";
 import clsx from "clsx";
 
-interface ButtonProps {
-  onClick?: () => void;
-  children: React.ReactNode;
-  kind?: "primary" | "secondary";
-}
-
-const VoiceButton: React.FC<ButtonProps> = ({
+const SquareButton = ({
   onClick = () => {},
   children,
   kind = "primary",
+  extraClasses,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  kind?: "primary" | "primaryOff" | "secondary";
+  extraClasses?: string;
 }) => {
+  const kindToClass = {
+    primary: "text-green border-green",
+    primaryOff: "text-white border-white",
+    secondary: "text-white border-transparent",
+  };
+
   return (
     <button
       onClick={onClick}
       className={clsx(
-        "w-full px-2 py-2 bg-gray md:bg-black text-xs lg:text-sm cursor-pointer transition-colors duration-200",
+        "px-2 py-2 bg-black text-xs lg:text-sm cursor-pointer transition-colors duration-200",
         "overflow-hidden text-nowrap border-1 border-dashed",
-        kind === "primary"
-          ? "text-green border-green"
-          : "text-white border-transparent"
+        kindToClass[kind],
+        extraClasses
       )}
       // Complex drop shadow easier to do outside of Tailwind
       style={{
@@ -33,4 +38,4 @@ const VoiceButton: React.FC<ButtonProps> = ({
   );
 };
 
-export default VoiceButton;
+export default SquareButton;

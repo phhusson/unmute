@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Upload } from "lucide-react";
-import VoiceButton from "./VoiceButton";
+import VoiceButton from "./SquareButton";
 import Modal from "./Modal";
 import SlantedButton from "@/app/SlantedButton";
 import Link from "next/link";
@@ -88,6 +88,7 @@ const VoiceUpload = ({
       trigger={
         <VoiceButton
           kind={isSelected ? "primary" : "secondary"}
+          extraClasses="w-full bg-gray md:bg-black"
         >
           Upload <Upload size={16} className="inline" />
         </VoiceButton>

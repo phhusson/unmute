@@ -1,0 +1,14 @@
+*.egg-info
+*.pyc
+
+debug/
+recordings/
+.venv/
+
+Dockerfile
+
+frontend/node_modules
+frontend/.next
+volumes/
+notebooks/
+voices/

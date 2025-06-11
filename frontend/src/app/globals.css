@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --green: #39F2AE;
+  --offwhite: #EFEFEF;
+  --lightgray: #9d9d9d;
+  /* #B5BCC5; */
+  --gray: #343434;
+  /* #8D949E; */
+  --darkgray: #191919;
+  /* #1e293b; */
+  --background: #121212;
+
+  --orange: #f5ab4a;
+  --pink: #f051db;
+  --purple: #a57de8;
+  /* for errors */
+  --red: #f55142;
+
+  --speaker-0: var(--green);
+  --speaker-1: var(--orange);
+  --speaker-2: var(--pink);
+  --speaker-3: var(--purple);
+
+  font-family:
+    var(--font-satoshi),
+    system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 500;
+  font-size: 1.35rem;
+
+  color-scheme: dark;
+  color: var(--offwhite);
+  background-color: var(--background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* TODO(vv): better place for the highlighted-word stuff? */
+.highlighted-word {
+  color: black;
+}
+
+/* Create a pseudo-element for the background */
+.highlighted-word::after {
+  content: "";
+  position: absolute;
+  background-color: var(--speaker-color, white);
+  left: -0.25rem;
+  right: -0.25rem;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  border-radius: 0.25rem;
+  z-index: -1;
+}
+
+@theme {
+  /* TODO: deduplicate */
+  --color-green: var(--green);
+  --color-offwhite: var(--offwhite);
+  --color-lightgray: var(--lightgray);
+  --color-gray: var(--gray);
+  --color-darkgray: var(--darkgray);
+  --color-orange: var(--orange);
+  --color-pink: var(--pink);
+  --color-purple: var(--purple);
+  --color-red: var(--red);
+  --color-background: var(--background);
+  /* sometimes it's useful to have these as variables too */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --font-family-satoshi: var(--font-satoshi);
+}

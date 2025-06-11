@@ -1,0 +1,84 @@
+[project]
+name = "unmute"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi[standard]>=0.115.12",
+    "fastrtc==0.0.23",
+    "mistralai>=1.5.1",
+    "msgpack>=1.1.0",
+    "msgpack-types>=0.5.0",
+    "openai>=1.70.0",
+    "plotly>=6.0.1",
+    "sphn>=0.2.0",
+    "prometheus-fastapi-instrumentator==7.1.0",
+    "prometheus-client==0.21.0",
+    "ruamel-yaml>=0.18.10",
+    "redis>=6.0.0",
+]
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages]
+find = { include = ["unmute"] }
+
+[tool.pyright]
+typeCheckingMode = "strict"
+
+# Unlike MyPy, Pyright makes an explicit distinction between "Unknown" (I don't know
+# what this is) and "Any" (I'll allow anything here). By default, "Unknown" is treated
+# as "Any" but these reportUnknownX settings make it an error to use "Unknown".
+# You'd have to explicitly cast it to "Any" or something else.
+# Let's disable these for now to stick to MyPy-like behavior.
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportUnknownVariableType = false
+reportUnknownParameterType = false
+
+# See above for how to fix reportMissingTypeStubs issues
+reportMissingTypeStubs = false
+
+# Ruff removes unused imports automatically, but doesn't hurt to have this enabled.
+reportUnusedImport = true # true in "strict", but make it explicit
+
+reportMissingTypeArgument = false
+
+
+[tool.ruff.lint]
+select = [
+    "B",    # bugbear
+    "E",    # pep8 rules
+    "F",    # pyflakes
+    "I001", # isort
+    "W",    # pep8 warnings
+    # pydocstyle - check that all arguments are documented
+    # It can make sense to add other "D" checks for more docstring
+    # consistency, but some of them are really pedantic - like requiring
+    # function-level docstrings for every single function
+    "D417",
+]
+
+ignore = [
+    # Line too long errors. Ruff format --fix will fix most of these
+    # and sometimes we want to keep long strings in one line etc.
+    "E501",
+]
+
+pydocstyle.convention = "google" # Google docstring style
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pyright",
+    "ruff",
+    "pre-commit",
+    "pyinstrument",
+    "ffmpeg-normalize>=1.31.3",
+]

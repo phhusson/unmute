@@ -244,7 +244,7 @@ const Unmute = () => {
         </header>
         <div
           className={clsx(
-            "w-full h-auto min-h-92",
+            "w-full h-auto min-h-75",
             "flex flex-row-reverse md:flex-row items-center justify-center grow",
             "-mt-10 md:mt-0 mb-10 md:mb-0 md:-mr-4"
           )}
@@ -270,7 +270,7 @@ const Unmute = () => {
           setConfig={setUnmuteConfig}
           voiceCloningUp={healthStatus.voice_cloning_up || false}
         />
-        <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center px-3 gap-3 mt-3 mb-3">
+        <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center px-3 gap-3 my-6">
           <SlantedButton
             onClick={onDownloadRecordingButtonPress}
             kind={recordingAvailable ? "secondary" : "disabled"}

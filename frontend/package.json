@@ -1,0 +1,40 @@
+{
+  "name": "tts-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@next/third-parties": "^15.3.2",
+    "@types/http-proxy": "^1.17.16",
+    "bcryptjs": "^3.0.2",
+    "clsx": "^2.1.1",
+    "http-proxy": "^1.18.1",
+    "lucide-react": "^0.503.0",
+    "next": "15.2.2",
+    "opus-recorder": "^8.0.5",
+    "pretty-print-json": "^3.0.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-use-websocket": "^4.13.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@next/eslint-plugin-next": "^15.3.2",
+    "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9.24.0",
+    "eslint-config-next": "15.2.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.7.1+sha512.2d92c86b7928dc8284f53494fb4201f983da65f0fb4f0d40baafa5cf628fa31dae3e5968f12466f17df7e97310e30f343a648baea1b9b350685dafafffdf5808"
+}

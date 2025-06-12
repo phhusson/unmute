@@ -117,11 +117,16 @@ services:
     command: ["worker", "--config", "configs/tts-py.toml"]
     build:
       context: services/moshi-server
+      ssh:                          # Only needed for staging
+        - default                   # Only needed for staging
+      args:                         # Only needed for staging
+        GITHUB_ORG: $GITHUB_ORG     # Only needed for staging
     environment:
       - TTS_CONFIG=/app/configs/tts.toml
     volumes:
       - cargo-registry:/root/.cargo/registry
       - moshi-server-target:/app/target
+      - uv-cache:/root/.cache/uv
       - /scratch/models/:/models
       - tts-logs:/logs
     stop_grace_period: 10s # change if needed
@@ -147,6 +152,7 @@ services:
     volumes:
       - cargo-registry:/root/.cargo/registry
       - moshi-server-target:/app/target
+      - uv-cache:/root/.cache/uv
       - /scratch/models/:/models
       - stt-logs:/logs
     stop_grace_period: 10s # change if needed
@@ -170,6 +176,7 @@ services:
     volumes:
       - cargo-registry:/root/.cargo/registry
       - moshi-server-target:/app/target
+      - uv-cache:/root/.cache/uv
       - /scratch/models/:/models
       - voice-cloning-logs:/logs
     deploy:
@@ -354,6 +361,7 @@ networks:
 volumes:
   cargo-registry:
   moshi-server-target:
+  uv-cache:
   voice-cloning-logs:
   letsencrypt:
   prometheus-data:

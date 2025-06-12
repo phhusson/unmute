@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     git \
     pkg-config \
     cmake \
+    openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
@@ -19,10 +20,15 @@ ENV PATH="/root/.cargo/bin:$PATH"
 
 COPY --from=ghcr.io/astral-sh/uv:0.7.2 /uv /uvx /bin/
 
+ARG GITHUB_ORG
+RUN --mount=type=ssh \
+    mkdir -p ~/.ssh && \
+    ssh-keyscan github.com >> ~/.ssh/known_hosts && \
+    git clone git@github.com:${GITHUB_ORG}/moshi-rs.git /app \
+    && cd /app \
+    && git checkout dfd0fae3f49bc53228155d9c6120f4604e1f830b 
+
 WORKDIR /app
-RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    uv sync --locked --compile-bytecode
 
 # When starting the container for the first time, we need to compile and download
 # everything, so disregarding healthcheck failure for 10 minutes is fine.
@@ -35,4 +41,4 @@ ENV RUST_BACKTRACE=1
 
 COPY . .
 
-ENTRYPOINT ["uv", "run", "--locked", "./start_moshi_server.sh"]
+ENTRYPOINT ["uv", "run", "--locked", "--project", "./moshi-server", "./start_moshi_server.sh"]

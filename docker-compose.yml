@@ -1,0 +1,125 @@
+services:
+  traefik:
+    image: traefik:v3.3.1
+    command:
+      # Swarm provider configuration
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+      # EntryPoints for HTTP and HTTPS
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+      # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  frontend:
+    image: unmute-frontend:latest
+    build:
+      context: frontend/
+      dockerfile: hot-reloading.Dockerfile
+    volumes:
+      - ./frontend/src:/app/src
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.frontend.priority=10" # lowest priority
+
+  workers:
+    image: unmute-workers:latest
+    build:
+      context: ./
+      target: hot-reloading
+    volumes:
+      - ./unmute:/app/unmute
+    environment:
+      - KYUTAI_STT_URL=ws://stt:8080
+      - KYUTAI_TTS_URL=ws://tts:8080
+      - KYUTAI_LLM_URL=http://llm:8000
+      - KYUTAI_VOICE_CLONING_URL=http://voice-cloning:8080
+      - NEWSAPI_API_KEY=$NEWSAPI_API_KEY
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workers.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.workers.middlewares=strip-api"
+      - "traefik.http.middlewares.strip-api.replacepathregex.regex=^/api/(.*)"
+      - "traefik.http.middlewares.strip-api.replacepathregex.replacement=/$$1"
+      - "traefik.http.routers.workers.entrypoints=websecure"
+      - "traefik.http.routers.workers.tls=true"
+      - "traefik.http.services.workers.loadbalancer.server.port=80"
+      - "traefik.http.routers.workers.priority=100" # higher priority than frontend
+      - "prometheus-port=80"
+
+  tts:
+    image: moshi-server:latest
+    command: ["worker", "--config", "configs/tts-py.toml"]
+    build:
+      context: services/moshi-server
+    environment:
+      - TTS_CONFIG=/app/configs/tts.toml
+    volumes:
+      - ./volumes/cargo-registry:/root/.cargo/registry
+      - ./volumes/tts-release:/app/target/release/
+      - ./volumes/uv-cache:/root/.cache/uv
+      - /tmp/models/:/models
+      - ./volumes/tts-logs:/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  stt:
+    image: moshi-server:latest
+    command: ["worker", "--config", "configs/stt.toml"]
+    build:
+      context: services/moshi-server
+    volumes:
+      - ./volumes/cargo-registry:/root/.cargo/registry
+      - ./volumes/stt-release:/app/target/release/
+      - ./volumes/uv-cache:/root/.cache/uv
+      - /tmp/models/:/models
+      - ./volumes/stt-logs:/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  llm:
+    image: vllm/vllm-openai:v0.8.5.post1
+    command:
+      [
+        "--model=google/gemma-3-1b-it",
+        "--max-model-len=8192",
+        "--dtype=bfloat16",
+        "--gpu-memory-utilization=0.8"
+      ]
+    volumes:
+      - ./volumes/huggingface-cache:/root/.cache/huggingface"
+      - ./volumes/vllm-cache:/root/.cache/vllm
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  default:

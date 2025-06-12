@@ -7,7 +7,7 @@ authorized_ids = ["public_token"]
 type = "PyPost"
 path = "/api/voice"
 # This is the only way currently to get the python file.
-script = "/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/moshi-server-0.6.0/voice.py"
+script = "/app/moshi-server/voice.py"
 
 [modules.voice_py.py]
 mimi_weight = "/models/e9d43d50_500_mimi_voice.safetensors"

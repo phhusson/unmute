@@ -153,6 +153,17 @@ services:
     deploy:
       labels:
         - "prometheus-port=8080"
+        # Expose the STT service via Traefik under the /stt-server path
+        - "traefik.enable=true"
+        - "traefik.http.routers.stt.rule=(Host(`www.${DOMAIN}`) || Host(`${DOMAIN}`)) && PathPrefix(`/stt-server`)"
+        - "traefik.http.routers.stt.middlewares=strip-stt"
+        - "traefik.http.middlewares.strip-stt.replacepathregex.regex=^/stt-server/(.*)"
+        - "traefik.http.middlewares.strip-stt.replacepathregex.replacement=/$$1"
+        - "traefik.http.routers.stt.entrypoints=websecure"
+        - "traefik.http.routers.stt.tls=true"
+        - "traefik.http.routers.stt.tls.certresolver=letsencrypt_resolver"
+        - "traefik.http.services.stt.loadbalancer.server.port=8080"
+        - "traefik.http.routers.stt.priority=110"
       replicas: 1
       resources:
         limits:

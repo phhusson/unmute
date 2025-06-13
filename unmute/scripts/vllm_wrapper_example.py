@@ -3,18 +3,16 @@
 
 from typing import Any, cast
 
-from unmute.llm.llm_utils import VLLMStream, rechunk_to_words
-
-# Set OpenAI's API key and API base to use vLLM's API server.
-openai_api_key = "EMPTY"
-openai_api_base = "http://localhost:8111/v1"
+from unmute.kyutai_constants import LLM_SERVER
+from unmute.llm.llm_utils import VLLMStream, get_openai_client, rechunk_to_words
 
 # Predefined message
 PREDEFINED_MESSAGE = "Explain the second law of thermodynamics"
 
 
-async def main():
-    s = VLLMStream()
+async def main(server_url: str):
+    client = get_openai_client(server_url=server_url)
+    s = VLLMStream(client)
 
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -27,10 +25,22 @@ async def main():
     ]
 
     async for message in rechunk_to_words(s.chat_completion(cast(Any, messages))):
-        print(message, end="\n", flush=True)
+        print(message, end="", flush=True)
+
+    print()
 
 
 if __name__ == "__main__":
+    import argparse
     import asyncio
 
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Run VLLM wrapper example.")
+    parser.add_argument(
+        "--server-url",
+        type=str,
+        default=LLM_SERVER,
+        help=f"The URL of the VLLM server (default: {LLM_SERVER}).",
+    )
+    args = parser.parse_args()
+
+    asyncio.run(main(args.server_url))

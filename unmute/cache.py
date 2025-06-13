@@ -42,6 +42,11 @@ class LocalCache(Generic[T]):
         expiration = time.time() + self.ttl_seconds
         self.cache[key] = (value, expiration)
 
+    def delete(self, key: str):
+        """Delete a key from the cache."""
+        if key in self.cache:
+            del self.cache[key]
+
     def cleanup(self):
         """Remove all expired entries"""
         now = time.time()
@@ -76,6 +81,14 @@ class RedisCache(Generic[T]):
             self.redis_client.setex(key, self.ttl_seconds, value)
         except redis.RedisError as e:
             raise CacheError(f"Failed to store value in Redis: {e}") from e
+
+    def delete(self, key: str):
+        key = f"{self.prefix}:{key}"
+        try:
+            # No error if the key does not exist.
+            self.redis_client.delete(key)
+        except redis.RedisError as e:
+            raise CacheError(f"Failed to delete value from Redis: {e}") from e
 
     def cleanup(self):
         pass  # No cleanup needed for Redis

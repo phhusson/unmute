@@ -76,7 +76,6 @@ class SpeechToText(ServiceWithStartup):
         self.stt_instance = stt_instance
         self.delay_sec = delay_sec
         self.websocket: websockets.ClientConnection | None = None
-        self.stt_instance = stt_instance
         self.sent_samples = 0
         self.received_words = 0
         self.current_time = -STT_DELAY_SEC
@@ -119,8 +118,8 @@ class SpeechToText(ServiceWithStartup):
     async def send_marker(self, id: int) -> None:
         await self._send({"type": "Marker", "id": id})
 
-    # data = msgpack.packb({"type": "Marker", "id": id})
     async def _send(self, data: dict) -> None:
+        """Send an arbitrary message to the STT server."""
         to_send = msgpack.packb(data, use_bin_type=True, use_single_float=True)
 
         if self.websocket:

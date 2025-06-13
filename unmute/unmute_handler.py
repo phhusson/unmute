@@ -30,7 +30,7 @@ from unmute.llm.llm_utils import (
     INTERRUPTION_CHAR,
     USER_SILENCE_MARKER,
     VLLMStream,
-    get_llm_client,
+    get_openai_client,
     rechunk_to_words,
 )
 from unmute.quest_manager import Quest, QuestManager
@@ -101,7 +101,7 @@ class UnmuteHandler(AsyncStreamHandler):
         self.tts_output_stopwatch = Stopwatch()
 
         self.chatbot = Chatbot()
-        self.llm_client = get_llm_client()
+        self.openai_client = get_openai_client()
 
         self.turn_transition_lock = asyncio.Lock()
 
@@ -193,7 +193,7 @@ class UnmuteHandler(AsyncStreamHandler):
         llm = VLLMStream(
             # if generating_message_i is 2, then we have a system prompt + an empty
             # assistant message signalling that we are generating a response.
-            self.llm_client,
+            self.openai_client,
             temperature=FIRST_MESSAGE_TEMPERATURE
             if generating_message_i == 2
             else FURTHER_MESSAGES_TEMPERATURE,

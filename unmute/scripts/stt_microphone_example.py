@@ -1,8 +1,18 @@
+"""Transcribe audio from the microphone in real-time."""
+
 import asyncio
 from typing import Any
 
 import numpy as np
-import sounddevice as sd
+
+try:
+    # We don't need this for anything else so it's not in the dependencies
+    import sounddevice as sd  # type: ignore
+except ImportError as e:
+    raise ImportError(
+        "Please install sounddevice to run this example: pip install sounddevice "
+        "(or uv pip install sounddevice if you're using uv)."
+    ) from e
 import tqdm
 
 from unmute.kyutai_constants import SAMPLES_PER_FRAME

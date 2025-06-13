@@ -6,9 +6,7 @@ authorized_ids = ["public_token"]
 [modules.tts_py]
 type = "Py"
 path = "/api/tts_streaming"
-# This is the only way currently to get the python file.
-script = "/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/moshi-server-0.6.0/tts.py"
-# should be script = "/app/moshi-server/tts.py"
+script = "/app/moshi-server/tts.py"
 text_tokenizer_file = "/models/test_en_fr_audio_8000.model"
 batch_size = 16
 text_bos_token = 1

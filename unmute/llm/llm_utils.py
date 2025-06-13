@@ -115,7 +115,7 @@ class MistralStream:
             yield delta
 
 
-def get_llm_client(server_url: str = LLM_SERVER) -> AsyncOpenAI:
+def get_openai_client(server_url: str = LLM_SERVER) -> AsyncOpenAI:
     return AsyncOpenAI(api_key="EMPTY", base_url=server_url + "/v1")
 
 

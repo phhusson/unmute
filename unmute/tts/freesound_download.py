@@ -66,7 +66,11 @@ class FreesoundVoiceSource(BaseModel):
 
 def get_sound_id_from_url(url: str) -> int:
     # e.g. https://freesound.org/people/balloonhead/sounds/785958/
-    return int(re.search(r"/sounds/(\d+)/", url).group(1))
+    matches = re.search(r"/sounds/(\d+)/", url)
+    if matches is None:
+        raise ValueError(f"Invalid Freesound URL: {url}")
+
+    return int(matches.group(1))
 
 
 def get_sound_instance(sound_id_or_url: int | str) -> FreesoundSoundInstance:

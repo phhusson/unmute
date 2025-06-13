@@ -7,27 +7,55 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-docker-images:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          package_json_file: frontend/package.json
+      - name: Set up a builder (we don't want to load the images)
+        run: docker buildx create --name mybuilder --use
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Build all docker images
+        run: docker buildx bake --progress=plain -f swarm-deploy.yml workers frontend tts
+        env:
+          DOMAIN: dummy
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          node-version: 18
-          cache: "pnpm"
-          cache-dependency-path: frontend/pnpm-lock.yaml
+          version: "0.7.12"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
         run: cd frontend && pnpm install
 
-      - name: Build project
-        run: cd frontend && pnpm run build
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files
+
+  backend-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.12"
+
+      - name: Run backend unit tests
+        run: uv run pytest -v

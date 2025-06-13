@@ -1,3 +1,5 @@
+"""Run speech-to-text on an audio file in a non-streaming way."""
+
 import asyncio
 import logging
 from pathlib import Path
@@ -7,7 +9,7 @@ import sphn
 import tqdm
 
 from unmute.kyutai_constants import SAMPLE_RATE, SAMPLES_PER_FRAME
-from unmute.stt.speech_to_text import SpeechToText, STTWordMessage
+from unmute.stt.speech_to_text import SpeechToText, STTMarkerMessage, STTWordMessage
 
 TARGET_SAMPLE_RATE = 24000
 TARGET_CHANNELS = 1  # Mono
@@ -31,8 +33,10 @@ async def main(audio_path: Path):
         await stt.send_audio(chunk)
         await asyncio.sleep(SAMPLES_PER_FRAME / SAMPLE_RATE)
 
-    await stt._send({"type": "Marker", "id": 0})
+    # When we get the marker back from the server, we know it has processed the audio
+    await stt.send_marker(0)
 
+    # Send extra audio to make sure the marker is processed
     for _ in range(25):
         await stt.send_audio(np.zeros(SAMPLES_PER_FRAME, dtype=np.int16))
 
@@ -43,6 +47,8 @@ async def main(audio_path: Path):
             if isinstance(msg, STTWordMessage):
                 words.append(msg)
                 pbar.set_postfix(n_words=len(words))
+            elif isinstance(msg, STTMarkerMessage):  # pyright: ignore[reportUnnecessaryIsInstance]
+                break
 
             pbar.update()
 

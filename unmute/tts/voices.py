@@ -82,12 +82,8 @@ async def text_to_speech_non_streaming(
             total_len += len(response)
             pbar.update(len(response))
             if isinstance(response, bytes):
-                reader.append_bytes(response)
-                while True:
-                    data = reader.read_pcm()
-                    all_data.append(data)
-                    if data.shape[0] == 0:
-                        break
+                audio_data = reader.append_bytes(response)
+                all_data.append(audio_data)
 
     async def websocket_client():
         uri = f"{url}/api/tts_streaming?voice={voice}&{CFG_PARAM}"

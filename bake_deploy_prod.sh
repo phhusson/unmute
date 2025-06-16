@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-expected_branch="prod-deployment"
+expected_branch="main"
 
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$current_branch" != "$expected_branch" ]]; then
@@ -13,7 +13,6 @@ if [[ -n $(git status --porcelain) ]]; then
   echo "❌ You have uncommitted changes. Please commit or stash them before deploying."
   exit 1
 fi
-
 
 export DOMAIN=unmute.sh
 export LLM_MODEL=google/gemma-3-12b-it

@@ -6,7 +6,6 @@ authorized_ids = ["public_token"]
 [modules.tts_py]
 type = "Py"
 path = "/api/tts_streaming"
-script = "/app/moshi-server/tts.py"
 text_tokenizer_file = "hf://kyutai/unmute/test_en_fr_audio_8000.model"
 batch_size = 16
 text_bos_token = 1

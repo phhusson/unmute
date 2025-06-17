@@ -6,7 +6,6 @@ authorized_ids = ["public_token"]
 [modules.voice_py]
 type = "PyPost"
 path = "/api/voice"
-script = "/app/moshi-server/voice.py"
 
 [modules.voice_py.py]
-mimi_weight = "/models/e9d43d50_500_mimi_voice.safetensors"
+mimi_weight = "hf://kyutai/unmute-voice-cloning/e9d43d50_500_mimi_voice.safetensors"

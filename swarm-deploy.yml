@@ -125,7 +125,6 @@ services:
       - moshi-server-target:/app/target
       - uv-cache:/root/.cache/uv
       - hf-cache:/root/.cache/huggingface/hub
-      - /scratch/models/:/models
       - tts-logs:/logs
     stop_grace_period: 10s # change if needed
     deploy:
@@ -154,7 +153,6 @@ services:
       - moshi-server-target:/app/target
       - uv-cache:/root/.cache/uv
       - hf-cache:/root/.cache/huggingface/hub
-      - /scratch/models/:/models
       - stt-logs:/logs
     stop_grace_period: 10s # change if needed
     deploy:
@@ -185,11 +183,13 @@ services:
   voice-cloning:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-moshi-server:latest
     command: ["worker", "--config", "configs/voice-cloning.toml"]
+    environment:
+      - HF_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
       - cargo-registry:/root/.cargo/registry
       - moshi-server-target:/app/target
       - uv-cache:/root/.cache/uv
-      - /scratch/models/:/models
+      - hf-cache:/root/.cache/huggingface/hub
       - voice-cloning-logs:/logs
     deploy:
       labels:

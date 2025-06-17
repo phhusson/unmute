@@ -42,7 +42,7 @@ services:
         order: start-first # Since we can't have multiple replicas, at least we can start the new container first.
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.traefik.rule=Host(`traefik-delicious-burrito.${DOMAIN}`)"
+        - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
         - "traefik.http.routers.traefik.middlewares=traefik-forward-auth"
         - "traefik.http.routers.traefik.entrypoints=websecure"
         - "traefik.http.routers.traefik.tls=true"
@@ -255,7 +255,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.prometheus.rule=Host(`prometheus-delicious-burrito.${DOMAIN}`)"
+        - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN}`)"
         - "traefik.http.routers.prometheus.entrypoints=websecure"
         - "traefik.http.routers.prometheus.tls=true"
         - "traefik.http.routers.prometheus.tls.certresolver=letsencrypt_resolver"
@@ -273,7 +273,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.grafana.rule=Host(`grafana-delicious-burrito.${DOMAIN}`)"
+        - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN}`)"
         - "traefik.http.routers.grafana.entrypoints=websecure"
         - "traefik.http.routers.grafana.tls=true"
         - "traefik.http.routers.grafana.tls.certresolver=letsencrypt_resolver"
@@ -325,7 +325,7 @@ services:
     deploy:
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.portainer.rule=Host(`portainer-delicious-burrito.${DOMAIN}`)"
+        - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)"
         - "traefik.http.routers.portainer.entrypoints=websecure"
         - "traefik.http.routers.portainer.tls=true"
         - "traefik.http.routers.portainer.tls.certresolver=letsencrypt_resolver"

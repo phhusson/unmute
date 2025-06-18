@@ -26,7 +26,7 @@ RUN --mount=type=ssh \
     ssh-keyscan github.com >> ~/.ssh/known_hosts && \
     git clone git@github.com:${GITHUB_ORG}/moshi-rs.git /app \
     && cd /app \
-    && git checkout 9bf0d23f070ba39dd5af30e7ff8a97c0bd28647c
+    && git checkout 155eaceb39bc37181f4d2ddc08327532b81155d8
 
 WORKDIR /app
 

@@ -12,7 +12,10 @@ text_bos_token = 1
 
 [modules.tts_py.py]
 log_folder = "/logs"
-moshi_weight = "hf://kyutai/unmute/tts_2961f6b6@82_checkpoint.safetensors"
-config_path = "hf://kyutai/unmute/tts_2961f6b6@82_config.json"
+moshi_weight = "hf://kyutai/unmute/moshi_1e68beda_240/checkpoint.safetensors"
+config_path = "hf://kyutai/unmute/moshi_1e68beda_240/config.json"
 voice_folder = "hf-snapshot://kyutai/unmute-voices/unmute-prod-website/*.safetensors"
 default_voice = "unmute-prod-website/barack_demo.wav"
+cfg_coef = 1
+cfg_condition = 2.0
+n_q = 24

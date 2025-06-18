@@ -15,6 +15,7 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
 
       # Enable Let's Encrypt with ACME, enable when you want
+      # It will get and renew certificates automatically for all domain names.
       - "--certificatesResolvers.letsencrypt_resolver.acme.httpChallenge.entryPoint=web"
       - "--certificatesResolvers.letsencrypt_resolver.acme.storage=/letsencrypt/acme.json"
       - "--certificatesResolvers.letsencrypt_resolver.acme.email=gabriel@kyutai.org"
@@ -41,6 +42,7 @@ services:
       update_config:
         order: start-first # Since we can't have multiple replicas, at least we can start the new container first.
       labels:
+        # Enable Traefik dashboard
         - "traefik.enable=true"
         - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
         - "traefik.http.routers.traefik.middlewares=traefik-forward-auth"
@@ -59,6 +61,8 @@ services:
     build:
       context: frontend/
     deploy:
+      # Having more than one replica is useful for scaling but also to avoid downtime
+      # during crashes or updates. Traffic will be load balanced between replicas.
       replicas: 5
       update_config:
         delay: 10s
@@ -69,6 +73,8 @@ services:
         - "traefik.http.routers.frontend.tls=true"
         - "traefik.http.routers.frontend.tls.certresolver=letsencrypt_resolver"
         - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+        # A lower priority is necessary because the routing rule is very broad
+        # (no path specified), so it might match other services.
         - "traefik.http.routers.frontend.priority=10" # lowest priority
 
   workers:
@@ -77,6 +83,8 @@ services:
       context: ./
       target: prod
     environment:
+      # tasks.service_name can be called to get the ip addresses of all the replicas
+      # for a given service, allowing manual load balancing. The backend does this currently.
       - KYUTAI_STT_URL=ws://tasks.stt:8080
       - KYUTAI_TTS_URL=ws://tasks.tts:8080
       - KYUTAI_LLM_URL=http://llm:8000
@@ -88,6 +96,8 @@ services:
       - /scratch/voice-donation/:/voice-donation
     deploy:
       labels:
+        # Reachable with /api but removes the /api prefix from the URL after routing
+        # because the backend expects the API to be at the root path.
         - "traefik.enable=true"
         - "traefik.http.routers.workers.rule=(Host(`www.${DOMAIN}`) || Host(`${DOMAIN}`)) && PathPrefix(`/api`)"
         - "traefik.http.routers.workers.middlewares=strip-api"
@@ -101,15 +111,20 @@ services:
         - "prometheus-port=80"
       replicas: 16
       update_config:
-        delay: 10s
-        parallelism: 3
+        delay: 10s      # wait 10 seconds before updating the next replica
+        parallelism: 3  # update 3 replicas at a time
       resources:
+        # We set limits to avoid having one container taking down the whole service
+        # but we don't set reservations because we do not have enough cpu/memory for this.
+        # In practice, if we set reservations, the service will not start because not
+        # enough resources are available.
         limits:
           cpus: "1.5"
           memory: 1G
 
   tts:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-moshi-server:latest
+    # The command is added to the ENTRYPOINT in the Dockerfile
     command: ["worker", "--config", "configs/tts-py.toml"]
     build:
       context: services/moshi-server
@@ -118,6 +133,7 @@ services:
       args:                         # Only needed for staging
         GITHUB_ORG: $GITHUB_ORG     # Only needed for staging
     environment:
+      # Env variables are grabbed from the environment of the Docker CLI, so the user deploying.
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
       - HF_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
@@ -137,6 +153,8 @@ services:
         limits:
           cpus: "8"
           memory: 16G
+        # This is how to reserve a GPU for the service in swarm. We can ask multiple GPUs
+        # for a single container but we never needed to.
         reservations:
           generic_resources:
             - discrete_resource_spec:
@@ -158,7 +176,8 @@ services:
     deploy:
       labels:
         - "prometheus-port=8080"
-        # Expose the STT service via Traefik under the /stt-server path
+        # Expose the STT service via Traefik under the /stt-server path, but remove the /stt-server prefix
+        # from the URL after routing.
         - "traefik.enable=true"
         - "traefik.http.routers.stt.rule=(Host(`www.${DOMAIN}`) || Host(`${DOMAIN}`)) && PathPrefix(`/stt-server`)"
         - "traefik.http.routers.stt.middlewares=strip-stt"
@@ -202,6 +221,9 @@ services:
           cpus: "8"
           memory: 16G
 
+  # This service does not do anything, the only way to use it is to make a docker exec
+  # and run the benchmark script manually with:
+  # docker exec -it $(docker ps --format '{{.Names}}' | grep benchmark-llm) bash /run_bench.sh
   benchmark-llm:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-benchmark-llm:latest
     build:
@@ -211,7 +233,6 @@ services:
 
   llm:
     image: vllm/vllm-openai:v0.8.5.post1
-    # --tensor-parallel-size 4 if multigpu for one replica
     command:
       [
         "--model=${LLM_MODEL}",
@@ -220,17 +241,23 @@ services:
       ]
     healthcheck:
       # The very first time it can be VERY slow, because of the download
-      # and compilation
+      # and compilation. We don't care about healthcheck failures during that time.
+      # But if the healthcheck succeeds once (even before the end of the start period),
+      # it will be considered healthy and the service will be available.
       start_period: 10m
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
     volumes:
       - "huggingface-cache:/root/.cache/huggingface"
+      # This is where vLLM stores its cache, we want to keep it across restarts
+      # to avoid recompiling the model every time.
       - vllm-cache:/root/.cache/vllm
     environment:
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     deploy:
       labels:
         - "prometheus-port=8000"
+      # 4 containers are used, one gpu per container, and the requests end up being load balanced
+      # between them. There is no "smart" routing but it's enough for our use case.
       replicas: 4
       update_config:
         delay: 120s # it takes a very long time to boot up and we want no downtime
@@ -247,11 +274,15 @@ services:
   prometheus:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-prometheus:latest
     build:
+      # The logic to grab the metrics of all services is here:
+      # Notably the prometheus-port swarm label is used to know which port to scrape.
       context: services/prometheus
     volumes:
       - prometheus-data:/prometheus
+      # Prometheus asks swarm about the services to know how to scrape them.
+      # It's read-only (ro) so it cannot modify the swarm or the containers.
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    user: root
+    user: root # To allow Prometheus to acces the Docker socket
     deploy:
       labels:
         - "traefik.enable=true"

@@ -295,11 +295,17 @@ services:
         - "prometheus-port=9090"
       placement:
         constraints:
+          # Only the Docker socket of the manager node has information about the swarm
+          # so Prometheus must run on the manager node.
           - node.role == manager
 
   grafana:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-grafana:latest
     build:
+      # All the dashboards are defined in the context directory. Note that there are no
+      # volumes mounted here, so the dashboards are not persistent. Any changes made
+      # in the UI will be lost on restart unless you add them to the build context.
+      # (export option in the UI, add the json in the git repo).
       context: services/grafana
     deploy:
       labels:
@@ -311,6 +317,7 @@ services:
         - "traefik.http.services.grafana.loadbalancer.server.port=3000"
         - "traefik.http.routers.grafana.middlewares=traefik-forward-auth"
 
+  # This is useful if someone wants to display dashboards without the google auth.
   grafana-with-password:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-grafana:latest
     deploy:
@@ -324,6 +331,8 @@ services:
         - "traefik.http.routers.grafana-with-password.tls.certresolver=letsencrypt_resolver"
         - "traefik.http.services.grafana-with-password.loadbalancer.server.port=3000"
 
+  # This service grabs many information about the docker nodes and containers.
+  # Prometheus scrapes it automatically since it has the prometheus-port label.
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
     command: -docker_only
@@ -336,8 +345,11 @@ services:
     deploy:
       labels:
         - "prometheus-port=8080"
+      # Global mode means that one container will run on each node.
+      # If one node is added or removed, the container will be started or stopped automatically.
       mode: global
 
+  # The portainer agent is used to monitor the Docker swarm and containers.
   agent:
     image: portainer/agent:lts
     volumes:
@@ -345,9 +357,8 @@ services:
       - /var/lib/docker/volumes:/var/lib/docker/volumes
     deploy:
       mode: global
-      placement:
-        constraints: [node.platform.os == linux]
 
+  # The portainer frontend
   portainer:
     image: portainer/portainer-ce:lts
     command: -H tcp://tasks.agent:9001 --tlsskipverify
@@ -361,10 +372,17 @@ services:
         - "traefik.http.routers.portainer.tls=true"
         - "traefik.http.routers.portainer.tls.certresolver=letsencrypt_resolver"
         - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+        # Protected by the traefik-forward-auth middleware
         - "traefik.http.routers.portainer.middlewares=traefik-forward-auth"
       placement:
+        # It's not needed to run on the manager node, but it needs to have a fixed
+        # node because it has data there (the portainer_data volume).
+        # We could use a node label to select a specific node, but for now
+        # we just run it on the manager node, it's enough.
         constraints: [node.role == manager]
 
+  # It's a service that's not running anything, but it can be used to debug the swarm.
+  # Notably network issues.
   debugger:
     image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-debugger:latest
     command: ["sleep", "infinity"]
@@ -373,12 +391,17 @@ services:
     volumes:
       - /tmp:/tmp
 
+  # This is a traefik middleware. Basically any service that has the label
+  # "traefik.http.routers.<name>.middlewares=traefik-forward-auth"
+  # will be protected by this middleware, which requires Google authentication.
+  # In our case, we use it for the Traefik dashboard, Grafana, Prometheus and Portainer.
   traefik-forward-auth:
     image: thomseddon/traefik-forward-auth:2
     environment:
       - PROVIDERS_GOOGLE_CLIENT_ID=1019173417489-oa1f0nrup1lc5jrcpqkfln0drpr23sk6.apps.googleusercontent.com
       - PROVIDERS_GOOGLE_CLIENT_SECRET=$PROVIDERS_GOOGLE_CLIENT_SECRET
       - SECRET=$PROVIDERS_GOOGLE_CLIENT_SECRET
+      # Users must have a kyutai.org email to be able to log in.
       - DOMAIN=kyutai.org
       - LOG_LEVEL=debug
     deploy:
@@ -399,6 +422,8 @@ networks:
     driver: overlay
     attachable: true
     driver_opts:
+      # This is useful if nodes communicates between themselves over the public internet.
+      # If you're sure that the traffic is only local, you can remove this.
       encrypted: "true"
 
 volumes:
@@ -410,8 +435,7 @@ volumes:
   letsencrypt:
   prometheus-data:
   huggingface-cache:
-  models-storage:
   portainer_data:
-  tts-logs: {}
-  stt-logs: {}
-  vllm-cache: {}
+  tts-logs:
+  stt-logs:
+  vllm-cache:

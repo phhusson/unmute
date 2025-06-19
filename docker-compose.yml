@@ -34,8 +34,8 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
       - "traefik.http.routers.frontend.priority=10" # lowest priority
 
-  workers:
-    image: unmute-workers:latest
+  backend:
+    image: unmute-backend:latest
     build:
       context: ./
       target: hot-reloading
@@ -49,14 +49,14 @@ services:
       - NEWSAPI_API_KEY=$NEWSAPI_API_KEY
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.workers.rule=Host(`localhost`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.workers.middlewares=strip-api"
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.middlewares=strip-api"
       - "traefik.http.middlewares.strip-api.replacepathregex.regex=^/api/(.*)"
       - "traefik.http.middlewares.strip-api.replacepathregex.replacement=/$$1"
-      - "traefik.http.routers.workers.entrypoints=websecure"
-      - "traefik.http.routers.workers.tls=true"
-      - "traefik.http.services.workers.loadbalancer.server.port=80"
-      - "traefik.http.routers.workers.priority=100" # higher priority than frontend
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.services.backend.loadbalancer.server.port=80"
+      - "traefik.http.routers.backend.priority=100" # higher priority than frontend
       - "prometheus-port=80"
 
   tts:

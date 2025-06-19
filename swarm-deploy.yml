@@ -77,8 +77,8 @@ services:
         # (no path specified), so it might match other services.
         - "traefik.http.routers.frontend.priority=10" # lowest priority
 
-  workers:
-    image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-workers:latest
+  backend:
+    image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-backend:latest
     build:
       context: ./
       target: prod
@@ -100,15 +100,15 @@ services:
         # Reachable with /api but removes the /api prefix from the URL after routing
         # because the backend expects the API to be at the root path.
         - "traefik.enable=true"
-        - "traefik.http.routers.workers.rule=(Host(`www.${DOMAIN}`) || Host(`${DOMAIN}`)) && PathPrefix(`/api`)"
-        - "traefik.http.routers.workers.middlewares=strip-api"
+        - "traefik.http.routers.backend.rule=(Host(`www.${DOMAIN}`) || Host(`${DOMAIN}`)) && PathPrefix(`/api`)"
+        - "traefik.http.routers.backend.middlewares=strip-api"
         - "traefik.http.middlewares.strip-api.replacepathregex.regex=^/api/(.*)"
         - "traefik.http.middlewares.strip-api.replacepathregex.replacement=/$$1"
-        - "traefik.http.routers.workers.entrypoints=websecure"
-        - "traefik.http.routers.workers.tls=true"
-        - "traefik.http.routers.workers.tls.certresolver=letsencrypt_resolver"
-        - "traefik.http.services.workers.loadbalancer.server.port=80"
-        - "traefik.http.routers.workers.priority=100" # higher priority than frontend
+        - "traefik.http.routers.backend.entrypoints=websecure"
+        - "traefik.http.routers.backend.tls=true"
+        - "traefik.http.routers.backend.tls.certresolver=letsencrypt_resolver"
+        - "traefik.http.services.backend.loadbalancer.server.port=80"
+        - "traefik.http.routers.backend.priority=100" # higher priority than frontend
         - "prometheus-port=80"
       replicas: 16
       update_config:

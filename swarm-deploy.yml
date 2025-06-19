@@ -83,7 +83,8 @@ services:
       context: ./
       target: prod
     environment:
-      # tasks.service_name can be called to get the ip addresses of all the replicas
+      # Any service can be called by other services at `http://<service_name>:<port>`.
+      # http://tasks.<service_name> can be called to get the ip addresses of all the replicas
       # for a given service, allowing manual load balancing. The backend does this currently.
       - KYUTAI_STT_URL=ws://tasks.stt:8080
       - KYUTAI_TTS_URL=ws://tasks.tts:8080

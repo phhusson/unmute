@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import localFont from "next/font/local";
-import CookieConsent from "./CookieConsent";
+import ConsentModal from "./ConsentModal";
 
 export const metadata: Metadata = {
   title: "Unmute by Kyutai",
@@ -41,7 +41,7 @@ export default function RootLayout({
       </head>
       <body>
         {children}
-        <CookieConsent />
+        <ConsentModal />
       </body>
     </html>
   );

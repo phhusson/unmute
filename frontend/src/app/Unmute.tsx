@@ -22,6 +22,7 @@ import { useRecordingCanvas } from "./useRecordingCanvas";
 import { useGoogleAnalytics } from "./useGoogleAnalytics";
 import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
+import { COOKIE_CONSENT_STORAGE_KEY } from "./ConsentModal";
 
 const Unmute = () => {
   const { isDevMode, showSubtitles } = useKeyboardShortcuts();
@@ -220,15 +221,21 @@ const Unmute = () => {
   }, [audioProcessor, lastMessage]);
 
   // When we connect, we send the initial config (voice and instructions) to the server.
+  // Also clear the chat history.
   useEffect(() => {
     if (readyState !== ReadyState.OPEN) return;
 
+    const recordingConsent =
+      localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY) === "true";
+
+    setRawChatHistory([]);
     sendMessage(
       JSON.stringify({
         type: "session.update",
         session: {
           instructions: unmuteConfig.instructions,
           voice: unmuteConfig.voice,
+          allow_recording: recordingConsent,
         },
       })
     );

@@ -91,11 +91,6 @@ class UnmuteHandler(AsyncStreamHandler):
         self.n_samples_received = 0  # Used for measuring time
         self.output_queue: asyncio.Queue[HandlerOutput] = asyncio.Queue()
         self.recorder = Recorder(RECORDINGS_DIR) if RECORDINGS_DIR else None
-        logger.info(
-            f"Recordings will be saved into directory: {RECORDINGS_DIR}"
-            if RECORDINGS_DIR
-            else "Recordings are disabled."
-        )
 
         self.quest_manager = QuestManager()
 
@@ -126,7 +121,7 @@ class UnmuteHandler(AsyncStreamHandler):
 
     async def cleanup(self):
         if self.recorder is not None:
-            await self.recorder.cleanup()
+            await self.recorder.shutdown()
 
     @property
     def stt(self) -> SpeechToText | None:
@@ -642,9 +637,15 @@ class UnmuteHandler(AsyncStreamHandler):
             logger.info("Long silence detected.")
             await self.add_chat_message_delta(USER_SILENCE_MARKER, "user")
 
-    def update_session(self, session: ora.SessionConfig):
+    async def update_session(self, session: ora.SessionConfig):
         if session.instructions:
             self.chatbot.set_instructions(session.instructions)
 
         if session.voice:
             self.tts_voice = session.voice
+
+        if not session.allow_recording and self.recorder:
+            await self.recorder.add_event("client", ora.SessionUpdate(session=session))
+            await self.recorder.shutdown(keep_recording=False)
+            self.recorder = None
+            logger.info("Recording disabled for a session.")

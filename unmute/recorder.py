@@ -46,11 +46,25 @@ class Recorder:
             + "\n"
         )
 
-    async def cleanup(self):
-        """Flush any remaining events to the file and close the recorder."""
+    async def shutdown(self, keep_recording: bool = True):
+        """Flush any remaining events to the file and close the recorder.
+
+        If `keep_recording` is False, the file will be deleted if it exists.
+        This is because we get the user consent after we've already started recording,
+        so if the user doesn't consent, we delete the file afterwards.
+        """
         if self.opened_file is not None:
             await self.opened_file.close()
-            logger.info(f"Finished recording into {self.path}.")
+            if keep_recording:
+                logger.info(f"Recording stored into {self.path}.")
+            else:
+                try:
+                    self.path.unlink()
+                    logger.info(
+                        f"Deleted recording {self.path} due to lack of consent."
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to delete recording file {self.path}: {e}")
 
 
 def make_filename() -> str:

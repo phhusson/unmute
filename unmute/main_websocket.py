@@ -449,7 +449,7 @@ async def receive_loop(
             if pcm.size:
                 await handler.receive((SAMPLE_RATE, pcm[np.newaxis, :]))
         elif isinstance(message, ora.SessionUpdate):
-            handler.update_session(message.session)
+            await handler.update_session(message.session)
             await emit_queue.put(ora.SessionUpdated(session=message.session))
 
         elif isinstance(message, ora.UnmuteAdditionalOutputs):

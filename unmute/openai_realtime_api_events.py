@@ -67,6 +67,7 @@ class SessionConfig(BaseModel):
     # The "Instructions" object is an Unmute extension
     instructions: Instructions | None = None
     voice: str | None = None
+    allow_recording: bool
 
 
 class SessionUpdate(BaseEvent[Literal["session.update"]]):

@@ -84,6 +84,7 @@ async def emit_loop(
             session=ora.SessionConfig(
                 instructions=SmalltalkInstructions(),
                 voice=voice,
+                allow_recording=False,  # No need to record the load test
             )
         ).model_dump_json()
     )

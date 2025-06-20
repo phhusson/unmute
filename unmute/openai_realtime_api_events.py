@@ -114,6 +114,7 @@ class InputAudioBufferSpeechStopped(
 
 class Response(BaseModel):
     object: Literal["realtime.response"] = "realtime.response"
+    # We currently only use in_progress
     status: Literal["in_progress", "completed", "cancelled", "failed", "incomplete"]
     voice: str
     chat_history: list[dict[str, Any]] = Field(default_factory=list)

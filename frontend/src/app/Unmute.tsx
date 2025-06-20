@@ -15,7 +15,7 @@ import UnmuteConfigurator, {
 import CouldNotConnect, { HealthStatus } from "./CouldNotConnect";
 import UnmuteHeader from "./UnmuteHeader";
 import Subtitles from "./Subtitles";
-import { ChatMessage } from "./chatHistory";
+import { ChatMessage, compressChatHistory } from "./chatHistory";
 import useWakeLock from "./useWakeLock";
 import ErrorMessages, { ErrorItem, makeErrorItem } from "./ErrorMessages";
 import { useRecordingCanvas } from "./useRecordingCanvas";
@@ -26,10 +26,11 @@ import { useBackendServerUrl } from "./useBackendServerUrl";
 const Unmute = () => {
   const { isDevMode, showSubtitles } = useKeyboardShortcuts();
   const [debugDict, setDebugDict] = useState<object | null>(null);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [unmuteConfig, setUnmuteConfig] = useState<UnmuteConfig>(
     DEFAULT_UNMUTE_CONFIG
   );
+  const [rawChatHistory, setRawChatHistory] = useState<ChatMessage[]>([]);
+  const chatHistory = compressChatHistory(rawChatHistory);
 
   const { microphoneAccess, askMicrophoneAccess } = useMicrophoneAccess();
 
@@ -117,7 +118,7 @@ const Unmute = () => {
     size: 1080,
     shouldRecord: shouldConnect,
     audioProcessor: audioProcessor.current,
-    chatHistory,
+    chatHistory: rawChatHistory,
   });
 
   const onConnectButtonPress = async () => {
@@ -173,7 +174,6 @@ const Unmute = () => {
       );
     } else if (data.type === "unmute.additional_outputs") {
       setDebugDict(data.args.debug_dict);
-      setChatHistory(data.args.chat_history);
     } else if (data.type === "error") {
       if (data.error.type === "warning") {
         console.warn(`Warning from server: ${data.error.message}`, data);
@@ -182,6 +182,23 @@ const Unmute = () => {
         console.error(`Error from server: ${data.error.message}`, data);
         setErrors((prev) => [...prev, makeErrorItem(data.error.message)]);
       }
+    } else if (
+      data.type === "conversation.item.input_audio_transcription.delta"
+    ) {
+      // Transcription of the user speech
+      setRawChatHistory((prev) => [
+        ...prev,
+        { role: "user", content: data.delta },
+      ]);
+    } else if (data.type === "response.text.delta") {
+      // Text-to-speech output
+      setRawChatHistory((prev) => [
+        ...prev,
+        // The TTS doesn't include spaces in its messages, so add a leading space.
+        // This way we'll get a leading space at the very beginning of the message,
+        // but whatever.
+        { role: "assistant", content: " " + data.delta },
+      ]);
     } else {
       const ignoredTypes = [
         "session.updated",
@@ -190,6 +207,9 @@ const Unmute = () => {
         "response.text.done",
         "response.audio.done",
         "conversation.item.input_audio_transcription.delta",
+        "input_audio_buffer.speech_stopped",
+        "input_audio_buffer.speech_started",
+        "unmute.interrupted_by_vad",
         "unmute.response.text.delta.ready",
         "unmute.response.audio.delta.ready",
       ];

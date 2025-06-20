@@ -60,6 +60,10 @@ app = FastAPI()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 
 # We prefer to scale this by running more instances of the server than having a single
 # server handle more. This is to avoid the GIL.
@@ -423,7 +427,7 @@ async def receive_loop(
             )
             continue
 
-        await handler.recorder.add_event("client", message)
+        message_to_record = message
 
         if isinstance(message, ora.InputAudioBufferAppend):
             opus_bytes = base64.b64decode(message.audio)
@@ -436,14 +440,27 @@ async def receive_loop(
                 else:
                     continue
             pcm = await asyncio.to_thread(opus_reader.append_bytes, opus_bytes)
+
+            message_to_record = ora.UnmuteInputAudioBufferAppendAnonymized(
+                number_of_samples=pcm.size,
+            )
+
             if pcm.size:
                 await handler.receive((SAMPLE_RATE, pcm[np.newaxis, :]))
-
         elif isinstance(message, ora.SessionUpdate):
             handler.update_session(message.session)
             await emit_queue.put(ora.SessionUpdated(session=message.session))
+
+        elif isinstance(message, ora.UnmuteAdditionalOutputs):
+            # Don't record this: it's a debugging message and can be verbose. Anything
+            # important to store should be in the other event types.
+            message_to_record = None
+
         else:
             logger.info("Ignoring message:", str(message)[:100])
+
+        if message_to_record is not None:
+            await handler.recorder.add_event("client", message_to_record)
 
 
 class EmitDebugLogger:

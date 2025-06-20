@@ -81,6 +81,17 @@ class InputAudioBufferAppend(BaseEvent[Literal["input_audio_buffer.append"]]):
     audio: str  # Base64-encoded Opus data
 
 
+class UnmuteInputAudioBufferAppendAnonymized(
+    BaseEvent[Literal["unmute.input_audio_buffer.append_anonymized"]]
+):
+    """
+    For recording, an anonymous version of InputAudioBufferAppend that only says
+    how many samples were appended, not the actual audio data.
+    """
+
+    number_of_samples: int
+
+
 class InputAudioBufferSpeechStarted(
     BaseEvent[Literal["input_audio_buffer.speech_started"]]
 ):
@@ -104,6 +115,7 @@ class Response(BaseModel):
     object: Literal["realtime.response"] = "realtime.response"
     status: Literal["in_progress", "completed", "cancelled", "failed", "incomplete"]
     voice: str
+    chat_history: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ResponseCreated(BaseEvent[Literal["response.created"]]):
@@ -181,6 +193,8 @@ ServerEvent = Union[
 ClientEvent = Union[
     SessionUpdate,
     InputAudioBufferAppend,
+    # Used internally for recording, we're not expecting the user to send this
+    UnmuteInputAudioBufferAppendAnonymized,
 ]
 
 Event = ClientEvent | ServerEvent

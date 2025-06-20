@@ -142,14 +142,20 @@ class UnmuteHandler(AsyncStreamHandler):
             self.stt.pause_prediction.value if self.stt else -1
         )
 
-        cutoff_time = self.audio_received_sec() - DEBUG_PLOT_HISTORY_SEC
-        self.debug_plot_data = [x for x in self.debug_plot_data if x["t"] > cutoff_time]
+        # This gets verbose
+        # cutoff_time = self.audio_received_sec() - DEBUG_PLOT_HISTORY_SEC
+        # self.debug_plot_data = [x for x in self.debug_plot_data if x["t"] > cutoff_time]
 
         return AdditionalOutputs(
             GradioUpdate(
-                chat_history=self.chatbot.chat_history,
+                chat_history=[
+                    # Not trying to hide the system prompt, just making it less verbose
+                    m
+                    for m in self.chatbot.chat_history
+                    if m["role"] != "system"
+                ],
                 debug_dict=self.debug_dict,
-                debug_plot_data=self.debug_plot_data,
+                debug_plot_data=[],
             )
         )
 
@@ -181,6 +187,7 @@ class UnmuteHandler(AsyncStreamHandler):
                 response=ora.Response(
                     status="in_progress",
                     voice=self.tts_voice or "missing",
+                    chat_history=self.chatbot.chat_history,
                 )
             )
         )
@@ -198,7 +205,6 @@ class UnmuteHandler(AsyncStreamHandler):
         )
 
         messages = self.chatbot.preprocessed_messages()
-        self.debug_dict["chatbot"]["system_prompt"] = self.chatbot.get_system_prompt()
 
         self.tts_output_stopwatch = Stopwatch(autostart=False)
         tts = None

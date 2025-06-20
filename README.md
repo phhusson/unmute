@@ -93,7 +93,7 @@ The following instructions only work for Linux and WSL.
 Start each of the services one by one in a different tmux session or terminal:
 ```bash
 ./dockerless/start_frontend.sh
-./dockerless/start_worker.sh
+./dockerless/start_backend.sh
 ./dockerless/start_llm.sh        # Needs 6.1GB of vram
 ./dockerless/start_stt.sh        # Needs 2.5GB of vram
 ./dockerless/start_tts.sh        # Needs 5.3GB of vram

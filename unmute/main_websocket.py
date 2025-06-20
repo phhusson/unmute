@@ -372,6 +372,7 @@ async def _run_route(websocket: WebSocket, handler: UnmuteHandler):
             tg.create_task(handler.quest_manager.wait(), name="quest_manager.wait()")
             tg.create_task(debug_running_tasks(), name="debug_running_tasks()")
     finally:
+        await handler.cleanup()
         logger.info("websocket_route() finished")
 
 
@@ -459,7 +460,7 @@ async def receive_loop(
         else:
             logger.info("Ignoring message:", str(message)[:100])
 
-        if message_to_record is not None:
+        if message_to_record is not None and handler.recorder is not None:
             await handler.recorder.add_event("client", message_to_record)
 
 
@@ -531,7 +532,8 @@ async def emit_loop(
 
         emit_debug_logger.on_emit(to_emit)
 
-        await handler.recorder.add_event("server", to_emit)
+        if handler.recorder is not None:
+            await handler.recorder.add_event("server", to_emit)
 
         try:
             await websocket.send_text(to_emit.model_dump_json())

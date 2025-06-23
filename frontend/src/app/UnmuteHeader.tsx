@@ -12,8 +12,16 @@ const frankRuhlLibre = Frank_Ruhl_Libre({
 const ShortExplanation = () => {
   return (
     <p className="text-xs text-right">
-      Speak to an AI using our new low-latency speech-to-text and text-to-speech
-      models. We{"'"}ll release these models as open source soon. Stay tuned.
+      Speak to an AI using our new low-latency speech-to-text (
+      <Link
+        href="https://kyutai.org/next/stt"
+        className="underline text-green"
+        target="_blank"
+        rel="noopener"
+      >
+        open source
+      </Link>
+      ) and text-to-speech (open source soon).
     </p>
   );
 };
@@ -41,9 +49,9 @@ const UnmuteHeader = () => {
         <div className="flex flex-col gap-3">
           <p>
             This is a cascaded system made by Kyutai: our speech-to-text
-            transcribes what you say, an LLM (we use Mistrall Small 24B) generates the
-            text of the response, and we then use our text-to-speech model to
-            say it out loud.
+            transcribes what you say, an LLM (we use Mistrall Small 24B)
+            generates the text of the response, and we then use our
+            text-to-speech model to say it out loud.
           </p>
           <p>
             Although cascaded systems lose valuable information like emotion,
@@ -64,9 +72,20 @@ const UnmuteHeader = () => {
             intonation.
           </p>
           <p>
-            Soon, we&apos;ll open-source the TTS and STT models – yes,{" "}
-            <em>the same ones</em> used here! If you want to be notified when we
-            do, follow us on{" "}
+            Kyutai STT is already open-source! Check out the{" "}
+            <Link
+              href="https://kyutai.org/next/stt"
+              target="_blank"
+              rel="noopener"
+              className="underline text-green"
+            >
+              project page
+            </Link>{" "}
+            to get started.
+          </p>
+          <p>
+            Soon, we&apos;ll open-source the TTS and the code of Unmute itself
+            as well. If you want to be notified when we do, follow us on{" "}
             <Link
               href="https://twitter.com/kyutai_labs"
               target="_blank"
@@ -89,7 +108,7 @@ const UnmuteHeader = () => {
               href="https://docs.google.com/forms/d/e/1FAIpQLSeu5GRxFOcgiAfAxFdn4LdyP6_s3jKEUNMNmaZxfH5-qdWCDQ/viewform?usp=header"
               target="_blank"
               rel="noopener"
-              className="underline"
+              className="underline text-green"
             >
               give us your email and we&apos;ll let you know
             </Link>

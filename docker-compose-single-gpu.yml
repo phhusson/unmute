@@ -89,7 +89,7 @@ services:
       - ./volumes/stt-logs:/logs
 
   llm:
-    image: vllm/vllm-openai:v0.8.5.post1
+    image: vllm/vllm-openai:v0.9.1
     command:
       [
         "--model=google/gemma-3-1b-it",

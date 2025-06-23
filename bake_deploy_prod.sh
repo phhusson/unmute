@@ -15,7 +15,8 @@ if [[ -n $(git status --porcelain) ]]; then
 fi
 
 export DOMAIN=unmute.sh
-export KYUTAI_LLM_MODEL=mistralai/Mistral-Small-24B-Instruct-2501
+# Note that using non-Mistral models also requires changing the vLLM args in ./swarm-deploy.yml
+export KYUTAI_LLM_MODEL=mistralai/Mistral-Small-3.2-24B-Instruct-2506
 export DOCKER_HOST=ssh://root@${DOMAIN}
 
 echo "If you get an connection error, do: ssh root@${DOMAIN}"

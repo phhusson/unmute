@@ -236,12 +236,15 @@ services:
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
 
   llm:
-    image: vllm/vllm-openai:v0.8.5.post1
+    image: vllm/vllm-openai:v0.9.1
     command:
       [
         "--model=${KYUTAI_LLM_MODEL}",
         "--max-model-len=8192",
         "--dtype=bfloat16",
+        "--tokenizer_mode=mistral",  # You can remove those args if you're not using mistral
+        "--config_format=mistral",
+        "--load-format=mistral",
       ]
     healthcheck:
       # The very first time it can be VERY slow, because of the download

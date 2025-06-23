@@ -2,7 +2,7 @@
 set -ex
 cd "$(dirname "$0")/.."
 
-uv tool run vllm@v0.8.5.post1 serve \
+uv tool run vllm@v0.9.1 serve \
   --model=google/gemma-3-1b-it \
   --max-model-len=8192 \
   --dtype=bfloat16 \

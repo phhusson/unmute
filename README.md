@@ -49,12 +49,12 @@ While we support deploying with Docker compose and without Docker, the Docker Sw
 ### LLM access on Hugging Face Hub
 
 You can use any LLM you want.
-By default, Unmute uses [Mistral Small 24B](https://huggingface.co/mistralai/Mistral-Small-24B-Instruct-2501) as the LLM.
+By default, Unmute uses [Mistral Small 3.2 24B](https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506) as the LLM.
 ([Gemma 3 12B](https://huggingface.co/google/gemma-3-12b-it) is also a good choice.)
 This model is freely available but requires you to accept the conditions to accept it:
 
 1. Create a Hugging Face account.
-2. Accept the conditions on the [Mistral Small 24B model page](https://huggingface.co/mistralai/Mistral-Small-24B-Instruct-2501).
+2. Accept the conditions on the [Mistral Small 3.2 24B model page](https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506).
 3. [Create an access token.](https://huggingface.co/docs/hub/en/security-tokens) You can use a fine-grained token, the only permission you need to grant is "Read access to contents of all public gated repos you can access".
 4. Add the token into your `~/.bashrc` or equivalent as `export HUGGING_FACE_HUB_TOKEN=hf_...your token here...`
 

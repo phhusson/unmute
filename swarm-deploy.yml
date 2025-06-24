@@ -225,16 +225,6 @@ services:
           cpus: "8"
           memory: 16G
 
-  # This service does not do anything, the only way to use it is to make a docker exec
-  # and run the benchmark script manually with:
-  # docker exec -it $(docker ps --format '{{.Names}}' | grep benchmark-llm) bash /run_bench.sh
-  benchmark-llm:
-    image: rg.fr-par.scw.cloud/namespace-unruffled-tereshkova/${DOMAIN}-benchmark-llm:latest
-    build:
-      context: services/benchmark-llm
-    environment:
-      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
-
   llm:
     image: vllm/vllm-openai:v0.9.1
     command:

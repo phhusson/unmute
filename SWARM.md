@@ -81,15 +81,6 @@ etc...
 * <https://prometheus.unmute.sh>
 * <https://portainer.unmute.sh>
 
-## Other
-
-Run the llm benchmark with
-
-```bash
-docker exec -it $(docker ps --format '{{.Names}}' | grep benchmark-llm) bash /run_bench.sh
-```
-
-
 ## Swarm services
 
 ### Main app
@@ -104,7 +95,6 @@ graph LR
     B --> LLM(LLM)
     B --> R(Redis)
     B --> V(Voice cloning)
-    Bench(Benchmark llm) --> LLM
 ```
 
 ### Monitoring

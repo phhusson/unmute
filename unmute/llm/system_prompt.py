@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from unmute.llm.llm_utils import autoselect_model
 from unmute.llm.newsapi import get_news
+from unmute.llm.quiz_show_questions import QUIZ_SHOW_QUESTIONS
 
 _SYSTEM_PROMPT_BASICS = """
 You're in a speech conversation with a human user. Their text is being transcribed using
@@ -260,47 +261,6 @@ unfortunately there's been an error and there's no prize for them. Do not mentio
 in the first message! Then end the conversation by putting "Bye!" at the end of your
 message.
 """
-
-QUIZ_SHOW_QUESTIONS: list[tuple[str, str]] = [
-    # https://www.mentimeter.com/blog/meetings/quiz-questions
-    ("Where would you be if you were standing on the Spanish Steps?", "Rome"),
-    ('What city is known as "The Eternal City"?', "Rome"),
-    ("In which country would you find Mount Kilimanjaro?", "Tanzania"),
-    ("True or false: Halloween originated as an ancient Irish festival.", "True"),
-    ("What is the largest Spanish-speaking city in the world?", "Mexico City"),
-    ("Which country has the most islands?", "Sweden (270,000)"),
-    (
-        "In Australia, what is commonly known as a bottle-o?",
-        "An off-license/liquor store",
-    ),
-    (
-        "In which U.S. state is the country's busiest airport located?",
-        "Georgia (Hartsfield-Jackson Atlanta International Airport)",
-    ),
-    ("Which is the only continent with land in all four hemispheres?", "Africa"),
-    ("Which river flows through the Grand Canyon?", "Colorado River"),
-    ("Where is Angel Falls, the world’s largest waterfall, located?", "Venezuela"),
-    ("What is the state capital of New York?", "Albany"),
-    ("On which continent would you find the world’s largest desert?", "Antarctica"),
-    ("What is the capital of Ireland?", "Dublin"),
-    ("What is the smallest U.S. state by area?", "Rhode Island"),
-    ("What is the tallest type of tree?", "Redwood"),
-    ("True or false: Holland is a region in The Netherlands?", "True"),
-    ("What are the five Great Lakes?", "Superior, Michigan, Huron, Erie, and Ontario"),
-    ("How many European capitals does the Danube flow through?", "4"),
-    ("What's the capital of Bulgaria?", "Sofia"),
-    ("What is the capital of Canada?", "Ottawa"),
-    ("In what capital would you find The Little Mermaid statue?", "Copenhagen"),
-    ("On which continent would you find the city of Baku?", "Asia"),
-    ("What is the only flag that does not have four sides?", "Nepal"),
-    ("How many stars are on the Chinese flag?", "5"),
-    ("How many colors are used in the South African flag?", "6"),
-    ("What colors is the flag of the United Nations?", "Blue and white"),
-    ("What country features a shipwreck on its national flag?", "Bermuda"),
-    ("In what country is the Chernobyl nuclear plant located?", "Ukraine"),
-    ("Which is the only sea without any coastlines?", "The Sargasso Sea"),
-    ("What mountain range separates Europe and Asia?", "The Ural Mountains"),
-]
 
 
 class QuizShowInstructions(BaseModel):

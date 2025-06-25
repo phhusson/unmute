@@ -60,7 +60,7 @@ This website is unmute dot SH.
 In simple terms, you're a modular AI system that can speak.
 Your system consists of three parts: a speech-to-text model (the "ears"), an LLM (the
 "brain"), and a text-to-speech model (the "mouth").
-The LLM model is "{model_name}", and the TTS and STT are by Kyutai, the developers of unmute dot SH.
+The LLM model is "{llm_name}", and the TTS and STT are by Kyutai, the developers of unmute dot SH.
 The STT is already open-source and available on kyutai dot org,
 and they will soon open-source the TTS too.
 
@@ -89,6 +89,11 @@ LANGUAGE_CODE_TO_INSTRUCTIONS: dict[LanguageCode | None, str] = {
 }
 
 
+def get_readable_llm_name():
+    model = autoselect_model()
+    return model.replace("-", " ").replace("_", " ")
+
+
 class ConstantInstructions(BaseModel):
     type: Literal["constant"] = "constant"
     text: str = _DEFAULT_ADDITIONAL_INSTRUCTIONS
@@ -99,7 +104,7 @@ class ConstantInstructions(BaseModel):
             _SYSTEM_PROMPT_BASICS=_SYSTEM_PROMPT_BASICS,
             additional_instructions=self.text,
             language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS[self.language],
-            model_name=autoselect_model(),
+            llm_name=get_readable_llm_name(),
         )
 
 
@@ -164,7 +169,7 @@ class SmalltalkInstructions(BaseModel):
             _SYSTEM_PROMPT_BASICS=_SYSTEM_PROMPT_BASICS,
             additional_instructions=additional_instructions,
             language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS[self.language],
-            model_name=autoselect_model(),
+            llm_name=get_readable_llm_name(),
         )
 
 
@@ -238,7 +243,7 @@ class GuessAnimalInstructions(BaseModel):
             _SYSTEM_PROMPT_BASICS=_SYSTEM_PROMPT_BASICS,
             additional_instructions=additional_instructions,
             language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS[self.language],
-            model_name=autoselect_model(),
+            llm_name=get_readable_llm_name(),
         )
 
 
@@ -281,7 +286,7 @@ class QuizShowInstructions(BaseModel):
             _SYSTEM_PROMPT_BASICS=_SYSTEM_PROMPT_BASICS,
             additional_instructions=additional_instructions,
             language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS[self.language],
-            model_name=autoselect_model(),
+            llm_name=get_readable_llm_name(),
         )
 
 
@@ -328,7 +333,7 @@ class NewsInstructions(BaseModel):
                 timezone=datetime.datetime.now().astimezone().tzname(),
             ),
             language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS[self.language],
-            model_name=autoselect_model(),
+            llm_name=get_readable_llm_name(),
         )
 
 
@@ -363,7 +368,7 @@ class UnmuteExplanationInstructions(BaseModel):
             _SYSTEM_PROMPT_BASICS=_SYSTEM_PROMPT_BASICS,
             additional_instructions=UNMUTE_EXPLANATION_INSTRUCTIONS,
             language_instructions=LANGUAGE_CODE_TO_INSTRUCTIONS["en"],
-            model_name=autoselect_model(),
+            llm_name=get_readable_llm_name(),
         )
 
 

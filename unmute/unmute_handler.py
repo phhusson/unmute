@@ -37,10 +37,7 @@ from unmute.llm.llm_utils import (
 from unmute.quest_manager import Quest, QuestManager
 from unmute.recorder import Recorder
 from unmute.service_discovery import find_instance
-from unmute.stt.speech_to_text import (
-    SpeechToText,
-    STTMarkerMessage,
-)
+from unmute.stt.speech_to_text import SpeechToText, STTMarkerMessage
 from unmute.timer import Stopwatch
 from unmute.tts.text_to_speech import (
     TextToSpeech,
@@ -571,6 +568,9 @@ class UnmuteHandler(AsyncStreamHandler):
             logger.warning("No message to send in TTS shutdown.")
             message = ""
 
+        # It's convenient to have the whole chat history available in the client
+        # after the response is done, so send the "gradio update"
+        await self.output_queue.put(self.get_gradio_update())
         await self.output_queue.put(ora.ResponseAudioDone())
 
         # Signal that the turn is over by adding an empty message.

@@ -9,7 +9,8 @@ RUN apk add --no-cache libc6-compat curl
 WORKDIR /app
 
 # Install dependencies using the package manager (detected automatically via lockfile)
-COPY package.json tsconfig.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* public/ postcss.config.mjs ./
+COPY package.json tsconfig.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* postcss.config.mjs ./
+COPY public/ ./public/
 RUN corepack enable pnpm && pnpm i --frozen-lockfile
 
 # Expose the port the dev server runs on

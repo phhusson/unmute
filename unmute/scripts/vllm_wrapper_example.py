@@ -1,6 +1,7 @@
 # https://github.com/gabrielchua/async-stream-openai-st/blob/824eab8f3ab600d3689d8d946526e48e0e0310c2/app.py
 # https://qwen.readthedocs.io/en/latest/deployment/vllm.html#openai-compatible-api-service
 
+import time
 from typing import Any, cast
 
 from unmute.kyutai_constants import LLM_SERVER
@@ -18,13 +19,20 @@ async def main(server_url: str):
         {"role": "system", "content": "You are a helpful assistant."},
         {
             "role": "user",
-            "content": f"Write a {200} word essay on 'bear vs shark'. "
+            "content": "Write a 200 word essay on 'bear vs shark'. "
             "The first line is a 2-3 word title with an emoji and then include "
             "2 line breaks. For example 'TITLE <emoji> \n \n ' ",
         },
     ]
 
+    start_time = time.time()
+    first_token_time = None
     async for message in rechunk_to_words(s.chat_completion(cast(Any, messages))):
+        if first_token_time is None:
+            first_token_time = time.time()
+            print(
+                f"\nTime to first token: {first_token_time - start_time:.3f} seconds\n"
+            )
         print(message, end="", flush=True)
 
     print()

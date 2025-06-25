@@ -251,7 +251,12 @@ async def receive_loop(
                 chat_history = message.args["chat_history"]
             elif isinstance(
                 message,
-                (ora.ResponseTextDone, ora.SessionUpdated, ora.ResponseTextDelta),
+                (
+                    ora.ResponseTextDone,
+                    ora.SessionUpdated,
+                    ora.ResponseTextDelta,
+                    ora.UnmuteInterruptedByVAD,
+                ),
             ):
                 pass  # ignored message
             else:

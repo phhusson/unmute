@@ -58,6 +58,10 @@ def generate_verification() -> VoiceDonationVerification:
 
 
 class VoiceDonationSubmission(BaseModel):
+    format_version: Literal["1.0"] = "1.0"
+    # The email is kept so that the person can contact us if they want to withdraw their
+    # donation, not published.
+    email: str
     nickname: str
     verification_id: uuid.UUID
     # Only CC0 is allowed for now, but storing in case we decide to change it later

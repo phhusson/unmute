@@ -3,14 +3,12 @@ import clsx from "clsx";
 
 const SlantedButton = ({
   onClick = () => {},
-  disabled,
   children,
   kind = "primary",
   style,
   extraClasses,
 }: {
   onClick?: () => void;
-  disabled?: boolean;
   children: React.ReactNode;
   kind?: "primary" | "secondary" | "disabled";
   style?: React.CSSProperties;
@@ -27,14 +25,14 @@ const SlantedButton = ({
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
+      disabled={kind === "disabled"}
       className={clsx(
         "px-4 py-2 mx-2 z-10 font-medium transition-colors duration-200",
         kindToClass[kind],
         {
-          "opacity-50 cursor-not-allowed": disabled,
+          "opacity-50 cursor-not-allowed": kind === "disabled",
           "focus:outline-none focus-visible:outline-4 focus-visible:outline-webkit-focus-ring-color":
-            !disabled,
+            kind !== "disabled",
         },
         extraClasses,
         // Green slanted border

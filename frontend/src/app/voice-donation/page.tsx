@@ -5,6 +5,8 @@ import { useBackendServerUrl } from "../useBackendServerUrl";
 import ErrorMessages, { ErrorItem, makeErrorItem } from "../ErrorMessages";
 import VoiceRecording, { RecordedAudio } from "../VoiceRecorder";
 import Link from "next/link";
+import IntroText from "./IntroText.mdx";
+import DonationConsent from "./DonationConsent";
 
 type VoiceDonationVerification = {
   id: string;
@@ -21,6 +23,7 @@ export default function VoiceDonation() {
     null
   );
   const [consentGiven, setConsentGiven] = useState(false);
+  const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
 
   const [uploadState, setUploadState] = useState<
@@ -75,6 +78,7 @@ export default function VoiceDonation() {
     formData.append("file", recordedAudio.file);
 
     const metadata = {
+      email: email,
       nickname: nickname,
       verification_id: verification?.id || null,
     };
@@ -112,10 +116,12 @@ export default function VoiceDonation() {
     );
   }
 
+  const validEmail = isValidEmail(email);
+
   return (
     <div className="w-full min-h-screen flex justify-center bg-background">
       <ErrorMessages errors={errors} setErrors={setErrors} />
-      <div className="flex flex-col justify-center max-w-xl gap-3 m-2">
+      <div className="flex flex-col justify-center max-w-xl gap-3 m-2 mb-20">
         <h1 className="text-4xl font-bold mt-4">Voice Donation</h1>
         <p className="italic">
           <Link href="/" className="underline">
@@ -133,8 +139,16 @@ export default function VoiceDonation() {
                   .
                 </p>
                 <p>
-                  Please save it now because it will not be shown again. You can
-                  use this identifier to find your voice later.{" "}
+                  You can use this identifier to find your voice later. It will
+                  not be shown again, please save it now. Alternatively, you can
+                  contact us at unmute@kyutai.org about your donation, see our{" "}
+                  <Link
+                    href="/voice-donation/privacy-policy"
+                    className="underline text-green"
+                  >
+                    Privacy Policy
+                  </Link>{" "}
+                  for more details.
                 </p>
                 <p>
                   <Link href={"/"} className="underline">
@@ -147,57 +161,10 @@ export default function VoiceDonation() {
         )}
         {uploadState !== "finished" && (
           <>
-            <p>
-              Here you can anonymously donate your voice to be used for voice
-              cloning by Kyutai&apos;s{" "}
-              <span className="text-green">
-                open-science text-to-speech model
-              </span>
-              . We are looking for pre-made voices to include alongside the
-              open-source release of the Kyutai TTS (coming soon).
-            </p>
-            <p>
-              The voice embedding and/or voice sample will be stored by Kyutai
-              and may be released anonymously under the{" "}
-              <Link
-                href="https://creativecommons.org/publicdomain/zero/1.0/"
-                className="underline "
-                target="_blank"
-                rel="noopener"
-              >
-                CC0 license
-              </Link>
-              . We may also decide not to release the voice.{" "}
-            </p>
-            <p>
-              <strong>
-                Be aware that donating your voice means that users of our TTS
-                will be able to use your voice to say anything.
-              </strong>{" "}
-              The voice recording is not linked to your personal information in
-              any way, but of course, it can still be possible to recognize you
-              by the voice.
-            </p>
-            <h2 className="text-xl strong mt-4">Verification</h2>
-            <div className="w-full flex flex-row">
-              <div className="border-1 border-green p-2 text-center">
-                Verbal consent
-              </div>
-              <div className="border-1 border-green p-2 text-center">
-                Verification sentences
-              </div>
-              <div className="border-1 border-green p-2 text-center grow-2">
-                Whatever you want (last 10 seconds will be used)
-              </div>
+            <div>
+              <IntroText />
             </div>
-            <p>
-              To verify that this is your voice, we will ask you to read a short
-              text out loud. Afterwards, you can say whatever you want. Have fun
-              with it! The TTS is good at reproducing the tone and mannerisms of
-              the voice. The last 10 seconds of your recording will be used as
-              the voice sample. Try to use the same tone throughout the
-              recording to make it easier to verify that it&apos;s you.
-            </p>
+
             {!recordedAudio && (
               <p>
                 You&apos;ll have the chance to listen to your recording before
@@ -220,8 +187,24 @@ export default function VoiceDonation() {
                 <p className="italic">{verification.text}</p>
               </div>
             )}
+            {/* {!verification && <div className="mt-20"></div>} */}
             {recordedAudio && (
               <div className="flex flex-col gap-2">
+                <label className="flex flex-col gap-1">
+                  Email to contact you if needed, or if you choose to withdraw
+                  (not published):
+                  <input
+                    type="text"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border px-2 py-1 bg-gray text-white"
+                  />
+                  {!validEmail && email && (
+                    <span className="text-red text-sm">
+                      Please enter a valid email address.
+                    </span>
+                  )}
+                </label>
                 <label className="flex flex-col gap-1">
                   (Optional) Preferred nickname for the voice if published:
                   <input
@@ -231,24 +214,13 @@ export default function VoiceDonation() {
                     className="border px-2 py-1 bg-gray text-white"
                   />
                 </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={consentGiven}
-                    onChange={(e) => setConsentGiven(e.target.checked)}
-                  />
-                  <p>
-                    I consent to my voice being used for voice cloning under the
-                    terms described above. <span className="text-red">*</span>
-                  </p>
-                </label>
+                <DonationConsent setConsentGiven={setConsentGiven} />
                 <SlantedButton
                   kind={
-                    consentGiven && uploadState === "not_started"
+                    consentGiven && validEmail && uploadState === "not_started"
                       ? "primary"
                       : "disabled"
                   }
-                  disabled={!consentGiven}
                   onClick={handleSubmit}
                 >
                   {uploadState === "uploading" ? "Uploading..." : "Submit"}
@@ -260,4 +232,9 @@ export default function VoiceDonation() {
       </div>
     </div>
   );
+}
+
+function isValidEmail(email: string): boolean {
+  // Basic email regex for validation
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }

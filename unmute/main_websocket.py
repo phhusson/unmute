@@ -259,7 +259,17 @@ async def post_voice_donation(
 ):
     """Finish a voice donation."""
     file_bytes = file.file.read()
-    metadata_parsed = VoiceDonationSubmission(**json.loads(metadata))
+
+    try:
+        metadata_parsed = VoiceDonationSubmission(**json.loads(metadata))
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}") from e
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid submission: {e.errors()}",
+        ) from e
+
     try:
         submit_voice_donation(metadata_parsed, file_bytes)
     except ValueError as e:

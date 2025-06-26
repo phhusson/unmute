@@ -1,3 +1,4 @@
+# See NOTE comments for places to modify.
 services:
   traefik:
     image: traefik:v3.3.1
@@ -6,16 +7,11 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
 
-      # EntryPoints for HTTP and HTTPS
+      # This is set up for HTTP. If you want HTTPS support for production, use Docker Swarm
+      # (check out swarm-deploy.yml) or ask ChatGPT to modify this file for you.
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-
-      # Redirect HTTP to HTTPS
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
@@ -28,9 +24,8 @@ services:
       - ./frontend/src:/app/src
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
       - "traefik.http.routers.frontend.priority=10" # lowest priority
 
@@ -45,81 +40,78 @@ services:
       - KYUTAI_STT_URL=ws://stt:8080
       - KYUTAI_TTS_URL=ws://tts:8080
       - KYUTAI_LLM_URL=http://llm:8000
-      - KYUTAI_VOICE_CLONING_URL=http://voice-cloning:8080
       - NEWSAPI_API_KEY=$NEWSAPI_API_KEY
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.backend.middlewares=strip-api"
       - "traefik.http.middlewares.strip-api.replacepathregex.regex=^/api/(.*)"
       - "traefik.http.middlewares.strip-api.replacepathregex.replacement=/$$1"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=80"
       - "traefik.http.routers.backend.priority=100" # higher priority than frontend
       - "prometheus-port=80"
 
   tts:
     image: moshi-server:latest
+    # NOTE: For a single user, open tts-py.toml and change batch_size to 2.
+    # A higher batch size allows you to serve more users at once, but with a higher latency.
     command: ["worker", "--config", "configs/tts-py.toml"]
     build:
       context: services/moshi-server
+      ssh:
+        - default
+      args:
+        GITHUB_ORG: $GITHUB_ORG
     environment:
-      - TTS_CONFIG=/app/configs/tts.toml
+      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
       - ./volumes/cargo-registry:/root/.cargo/registry
       - ./volumes/tts-release:/app/target/release/
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/tts-logs:/logs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
   stt:
     image: moshi-server:latest
+    # NOTE: For a single user, open stt.toml and change batch_size to 2.
+    # A higher batch size allows you to serve more users at once, but with a higher latency.
     command: ["worker", "--config", "configs/stt.toml"]
     build:
       context: services/moshi-server
+      ssh:
+        - default
+      args:
+        GITHUB_ORG: $GITHUB_ORG
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
       - ./volumes/cargo-registry:/root/.cargo/registry
       - ./volumes/stt-release:/app/target/release/
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/stt-logs:/logs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
   llm:
     image: vllm/vllm-openai:v0.9.1
     command:
       [
-        "--model=google/gemma-3-1b-it",
-        "--max-model-len=8192",
+        # NOTE: Change the LLM here if you want.
+        # (caution: gemma-3-1b-it also exists but it's slow on vLLM: https://github.com/vllm-project/vllm/issues/19575)
+        "--model=google/gemma-3-4b-it",
+        # NOTE: You can adapt this based on your GPU memory.
+        # A higher value takes more memory but supports longer conversations.
+        "--max-model-len=1536",
         "--dtype=bfloat16",
-        "--gpu-memory-utilization=0.8"
+        # NOTE: Change this based on your GPU memory.
+        # A higher value can make inference faster.
+        "--gpu-memory-utilization=0.8",
       ]
     volumes:
       - ./volumes/huggingface-cache:/root/.cache/huggingface"
       - ./volumes/vllm-cache:/root/.cache/vllm
     environment:
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
 networks:
   default:

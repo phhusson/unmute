@@ -34,8 +34,7 @@ We provide in this repository multiple ways of deploying your own [unmute.sh](un
 
 | Name                      | Number of gpus | Number of machines | Difficulty | Documented | Kyutai support |
 |---------------------------|----------------|--------------------|------------|------------|----------------|
-| Docker compose single-gpu | 1              | 1                  | Very easy  |✅         |✅              |
-| Docker compose multi-gpu  | 3              | 1                  | Very easy  |✅         |✅              |
+| Docker compose            | 1+             | 1                  | Very easy  |✅         |✅              |
 | Without Docker            | 1 to 3         | 1 to 5             | Easy       |✅         |✅              |
 | Docker swarm              | 1 to ~100      | 1 to ~100          | Medium     |✅         |❌              |
 
@@ -60,7 +59,17 @@ This model is freely available but requires you to accept the conditions to acce
 
 ### Start Unmute
 
-On a machine with at least 3 GPUs available, run:
+By default, the configuration files [for the speech-to-text](services/moshi-server/stt.toml)
+and [for the text-to-speech](services/moshi-server/tts-py.toml) have a high batch size to allow serving many users simultaneously.
+If you're just running Unmute for a single user, go to the two configuration files and change `batch_size` to 2.
+Using 2 instead of 1 will prevent issues with hitting the server capacity if you reconnect very quickly.
+
+Open `docker-compose.yml` and look for `NOTE:` comments to see other places that you might need to adjust.
+
+If you use [google/gemma-3-4b-it](https://huggingface.co/google/gemma-3-4b-it),
+the default in `docker-compose.yml`, 16GB of GPU memory is sufficient.
+
+On a machine with a GPU, run:
 
 ```bash
 # Make sure you have the environment variable with the token:
@@ -69,11 +78,25 @@ echo $HUGGING_FACE_HUB_TOKEN  # This should print hf_...something...
 docker compose -f docker-compose.yml up
 ```
 
-### Single GPU?
+#### Using multiple GPUs
 
-Unmute is meant to be run on multiple GPUs. Running everything (speech-to-text, text-to-speech, and the VLLM server) on the same GPU is possible, but **will result in significantly worse latency**.
-If you plan to run on a single GPU, replace `docker-compose.yml` with `docker-compose-single-gpu.yml` in the command above.
-That configuration file uses Gemma 3 1B instead of Mistral Small 24B, and sets the batch sizes of the STT and TTS lower so that everything fits onto one GPU.
+On [Unmute.sh](https://unmute.sh/), we run the speech-to-text, text-to-speech, and the VLLM server on separate GPUs,
+which improves the latency compared to a single-GPU setup.
+The TTS latency decreases from ~750ms when running everything on a single L40S GPU to around ~450ms on [Unmute.sh](https://unmute.sh/).
+
+If you have at least three GPUs available, add this snippet to the `stt`, `tts` and `llm` services to ensure they are run on separate GPUs:
+
+```yaml
+  stt: # Similarly for `tts` and `llm`
+    # ...other configuration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+```
 
 ### Running without Docker
 

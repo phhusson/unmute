@@ -122,13 +122,13 @@ const VoiceUpload = ({
           purposes only. Use responsibly.
         </p>
         {/* Commented out for now until we have more clarity. */}
-        {/* <p className="mb-2">
+        <p className="mb-2">
           You can also help us by{" "}
-          <Link href="/voice-donation" className="underline">
+          <Link href="/voice-donation" className="underline text-green">
             anonymously donating your voice
           </Link>{" "}
           to be released alongside the open-source release of our TTS model.
-        </p> */}
+        </p>
         {!file && (
           <div className="flex flex-row gap-2 justify-center">
             <div className="relative">

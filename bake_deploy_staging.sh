@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ex
 
+uv run unmute/scripts/check_hugging_face_token_not_write.py $HUGGING_FACE_HUB_TOKEN
+
 export DOMAIN=unmute-staging.kyutai.io
 export KYUTAI_LLM_MODEL=google/gemma-3-4b-it
 export DOCKER_HOST=ssh://root@${DOMAIN}

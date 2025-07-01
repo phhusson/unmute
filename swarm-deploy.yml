@@ -151,6 +151,18 @@ services:
     deploy:
       labels:
         - "prometheus-port=8080"
+        # Expose the TTS service via Traefik under the /tts-server path, but remove the /tts-server prefix
+        # from the URL after routing.
+        - "traefik.enable=true"
+        - "traefik.http.routers.tts.rule=(Host(`www.${DOMAIN}`) || Host(`${DOMAIN}`)) && PathPrefix(`/tts-server`)"
+        - "traefik.http.routers.tts.middlewares=strip-tts"
+        - "traefik.http.middlewares.strip-tts.replacepathregex.regex=^/tts-server/(.*)"
+        - "traefik.http.middlewares.strip-tts.replacepathregex.replacement=/$$1"
+        - "traefik.http.routers.tts.entrypoints=websecure"
+        - "traefik.http.routers.tts.tls=true"
+        - "traefik.http.routers.tts.tls.certresolver=letsencrypt_resolver"
+        - "traefik.http.services.tts.loadbalancer.server.port=8080"
+        - "traefik.http.routers.tts.priority=120"
       replicas: 3
       update_config:
         delay: 60s # it takes a very long time to boot up and we want no downtime

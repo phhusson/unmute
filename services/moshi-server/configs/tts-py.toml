@@ -15,7 +15,7 @@ log_folder = "/logs"
 # We could use replace **/*.safetensors with unmute-prod-website/*.safetensors
 # to only get the voices used in Unmute, but we are using the TTS for the demo
 # on the project page too and for that we want to load the other voices as well
-voice_folder = "hf-snapshot://kyutai/unmute-voices/**/*.safetensors"
+voice_folder = "hf-snapshot://kyutai/tts-voices/**/*.safetensors"
 default_voice = "unmute-prod-website/default_voice.wav"
 cfg_coef = 2.0
 n_q = 24

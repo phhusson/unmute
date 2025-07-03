@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     git \
     pkg-config \
     cmake \
+    wget \
     openssh-client \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
@@ -31,6 +32,9 @@ HEALTHCHECK --start-period=10m \
 
 EXPOSE 8080
 ENV RUST_BACKTRACE=1
+
+RUN wget https://raw.githubusercontent.com/kyutai-labs/moshi/a40c5612ade3496f4e4aa47273964404ba287168/rust/moshi-server/pyproject.toml
+RUN wget https://raw.githubusercontent.com/kyutai-labs/moshi/a40c5612ade3496f4e4aa47273964404ba287168/rust/moshi-server/uv.lock
 
 COPY . .
 

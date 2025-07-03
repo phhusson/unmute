@@ -1,4 +1,7 @@
 import os
+import aiohttp
+import asyncio
+import json
 import re
 from copy import deepcopy
 from functools import cache
@@ -161,3 +164,15 @@ class VLLMStream:
                 chunk_content = chunk.choices[0].delta.content
                 assert isinstance(chunk_content, str)
                 yield chunk_content
+
+class SideStream:
+    async def completion(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
+        url = 'http://192.168.1.9:9000'
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=json.dumps(messages), headers = {"Content-Type": "application/json"}) as response:
+                # Check if the request was successful
+                if response.status == 200:
+                    response_text = await response.text()
+                    yield response_text
+                else:
+                    print(f"POST request failed with status code {response.status}")

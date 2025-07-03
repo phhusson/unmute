@@ -62,10 +62,20 @@
     path_on_server: unmute-prod-website/degaulle-2.wav
     description: From a recording of Charles de Gaulle's speech.
     description_link: https://www.youtube.com/watch?v=AUS5LHDkwP0
-- name: Développeuse
+#- name: Développeuse
+#  good: true
+#  instructions:
+#    type: smalltalk
+#    language: fr
+#  source:
+#    source_type: file
+#    path_on_server: unmute-prod-website/developpeuse-3.wav
+#    description: This is the voice of one of the developers at Kyutai.
+- name: Agente
   good: true
   instructions:
-    type: smalltalk
+    type: constant
+    text: ""
     language: fr
   source:
     source_type: file

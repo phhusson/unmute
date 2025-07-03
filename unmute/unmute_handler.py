@@ -1,5 +1,8 @@
 import asyncio
+import aiostream
+from aiostream import stream as aiostream
 import math
+import time
 from functools import partial
 from logging import getLogger
 from pathlib import Path
@@ -31,6 +34,7 @@ from unmute.llm.llm_utils import (
     INTERRUPTION_CHAR,
     USER_SILENCE_MARKER,
     VLLMStream,
+    SideStream,
     get_openai_client,
     rechunk_to_words,
 )
@@ -205,6 +209,7 @@ class UnmuteHandler(AsyncStreamHandler):
             if generating_message_i == 2
             else FURTHER_MESSAGES_TEMPERATURE,
         )
+        side = SideStream()
 
         messages = self.chatbot.preprocessed_messages()
 
@@ -220,34 +225,46 @@ class UnmuteHandler(AsyncStreamHandler):
         mt.VLLM_SENT_WORDS.inc(num_words_sent)
         mt.VLLM_REQUEST_LENGTH.observe(num_words_sent)
         mt.VLLM_ACTIVE_SESSIONS.inc()
+        a = rechunk_to_words(llm.chat_completion(messages))
+        b = side.completion(messages)
 
         try:
-            async for delta in rechunk_to_words(llm.chat_completion(messages)):
-                await self.output_queue.put(
-                    ora.UnmuteResponseTextDeltaReady(delta=delta)
-                )
+            async with aiostream.merge(a, b).stream() as streamer:
+                async for delta in streamer:
+                    if delta.startswith("☺️"):
+                        print(time.time()%10, "Received tool saying to stop")
+                        self.chatbot.chat_history.append({"role":"user","content":"System: Done function call."})
+                        self.chatbot.chat_history.append({"role":"assistant","content":""})
+                        # We did a tool call, but the tool didn't answer anything
+                        await self.interrupt_bot()
+                        await self._generate_response()
+                        return
+                    await self.output_queue.put(
+                        ora.UnmuteResponseTextDeltaReady(delta=delta)
+                    )
 
-                mt.VLLM_RECV_WORDS.inc()
-                response_words.append(delta)
+                    print(time.time()%10, "Adding ", delta)
+                    mt.VLLM_RECV_WORDS.inc()
+                    response_words.append(delta)
 
-                if time_to_first_token is None:
-                    time_to_first_token = llm_stopwatch.time()
-                    self.debug_dict["timing"]["to_first_token"] = time_to_first_token
-                    mt.VLLM_TTFT.observe(time_to_first_token)
-                    logger.info("Sending first word to TTS: %s", delta)
+                    if time_to_first_token is None:
+                        time_to_first_token = llm_stopwatch.time()
+                        self.debug_dict["timing"]["to_first_token"] = time_to_first_token
+                        mt.VLLM_TTFT.observe(time_to_first_token)
+                        logger.info("Sending first word to TTS: %s", delta)
 
-                self.tts_output_stopwatch.start_if_not_started()
-                try:
-                    tts = await quest.get()
-                except Exception:
-                    error_from_tts = True
-                    raise
+                    self.tts_output_stopwatch.start_if_not_started()
+                    try:
+                        tts = await quest.get()
+                    except Exception:
+                        error_from_tts = True
+                        raise
 
-                if len(self.chatbot.chat_history) > generating_message_i:
-                    break  # We've been interrupted
+                    if len(self.chatbot.chat_history) > generating_message_i:
+                        break  # We've been interrupted
 
-                assert isinstance(delta, str)  # make Pyright happy
-                await tts.send(delta)
+                    assert isinstance(delta, str)  # make Pyright happy
+                    await tts.send(delta)
 
             await self.output_queue.put(
                 # The words include the whitespace, so no need to add it here

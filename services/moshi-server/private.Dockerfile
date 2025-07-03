@@ -1,3 +1,4 @@
+# This is the Kyutai-internal version.
 FROM nvidia/cuda:12.1.0-devel-ubuntu22.04 AS base
 
 # Set environment variables to avoid interactive prompts during package installation
@@ -41,4 +42,4 @@ ENV RUST_BACKTRACE=1
 
 COPY . .
 
-ENTRYPOINT ["uv", "run", "--locked", "--project", "./moshi-server", "./start_moshi_server.sh"]
+ENTRYPOINT ["uv", "run", "--locked", "--project", "./moshi-server", "./start_moshi_server_private.sh"]

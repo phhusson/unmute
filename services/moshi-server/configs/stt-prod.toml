@@ -10,8 +10,7 @@ lm_model_file = "hf://kyutai/stt-1b-en_fr-candle/model.safetensors"
 text_tokenizer_file = "hf://kyutai/stt-1b-en_fr-candle/tokenizer_en_fr_audio_8000.model"
 audio_tokenizer_file = "hf://kyutai/stt-1b-en_fr-candle/mimi-pytorch-e351c8d8@125.safetensors"
 asr_delay_in_tokens = 6
-# A higher batch size allows you to serve more users at once, but with a higher latency and memory usage.
-batch_size = 1
+batch_size = 64  # NOTE: make this smaller if running on one GPU
 conditioning_learnt_padding = true
 temperature = 0.25
 

@@ -61,8 +61,8 @@ services:
     environment:
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
-      - ./volumes/cargo-registry:/root/.cargo/registry
-      - ./volumes/tts-release:/app/target/release/
+      - ./volumes/cargo-registry-tts:/root/.cargo/registry
+      - ./volumes/tts-target:/app/target
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/tts-logs:/logs
@@ -83,8 +83,8 @@ services:
     environment:
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     volumes:
-      - ./volumes/cargo-registry:/root/.cargo/registry
-      - ./volumes/stt-release:/app/target/release/
+      - ./volumes/cargo-registry-stt:/root/.cargo/registry
+      - ./volumes/stt-target:/app/target
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/stt-logs:/logs
@@ -95,6 +95,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
 
   llm:
     image: vllm/vllm-openai:v0.9.1

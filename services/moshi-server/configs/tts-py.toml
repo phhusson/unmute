@@ -18,4 +18,4 @@ log_folder = "/logs"
 voice_folder = "hf-snapshot://kyutai/tts-voices/**/*.safetensors"
 default_voice = "unmute-prod-website/default_voice.wav"
 cfg_coef = 2.0
-n_q = 24
+n_q = 32

@@ -62,6 +62,11 @@ This model is freely available but requires you to accept the conditions to acce
 
 Make sure you have [**Docker Compose**](https://docs.docker.com/compose/) installed.
 You'll also need the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) to allow Docker to access your GPU.
+To make sure the NVIDIA Container Toolkit is installed correctly, run:
+```bash
+sudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
+```
+
 
 If you use [meta-llama/Llama-3.2-1B](https://huggingface.co/meta-llama/Llama-3.2-1B),
 the default in `docker-compose.yml`, 16GB of GPU memory is sufficient.
@@ -73,7 +78,7 @@ On a machine with a GPU, run:
 # Make sure you have the environment variable with the token:
 echo $HUGGING_FACE_HUB_TOKEN  # This should print hf_...something...
 
-docker compose -f docker-compose.yml up
+docker compose up --build
 ```
 
 #### Using multiple GPUs

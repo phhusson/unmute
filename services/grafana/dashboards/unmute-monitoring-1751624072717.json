@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -108,7 +108,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by(__name__) (increase(worker_sessions_total[24h]))",
+          "expr": "sum by(__name__) (increase(worker_sessions_total[1h]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -118,7 +118,7 @@
           "useBackend": false
         }
       ],
-      "title": "Connections in 24h window",
+      "title": "Unmute sessions (1h window)",
       "type": "timeseries"
     },
     {
@@ -186,7 +186,7 @@
           "useBackend": false
         }
       ],
-      "title": "Active sessions",
+      "title": "Unmute active sessions",
       "type": "stat"
     },
     {
@@ -272,11 +272,12 @@
       "targets": [
         {
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sum by(__name__) (asr_open_channels)",
+          "editorMode": "code",
+          "expr": "sum by(__name__) (avg_over_time(asr_open_channels[1h]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "legendFormat": "ASR open channels",
+          "interval": "",
+          "legendFormat": "STT open channels",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -287,19 +288,20 @@
             "uid": "dekodsix13x8ga"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sum(py_open_channels)",
+          "editorMode": "code",
+          "expr": "sum(avg_over_time(py_open_channels[1h]))",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
+          "interval": "",
           "legendFormat": "TTS open channels",
           "range": true,
           "refId": "B",
           "useBackend": false
         }
       ],
-      "title": "Open channels",
+      "title": "STT/TTS active connections (average in 1h window)",
       "type": "timeseries"
     },
     {
@@ -310,7 +312,40 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -334,24 +369,21 @@
         "x": 0,
         "y": 8
       },
-      "id": 16,
-      "interval": "60m",
+      "id": 18,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
+        "legend": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "values": false
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "pluginVersion": "11.6.1",
       "targets": [
@@ -359,7 +391,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by(__name__) (increase(worker_sessions_total[3650d]))",
+          "expr": "sum by(__name__) (increase(worker_sessions_total[24h]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -369,8 +401,8 @@
           "useBackend": false
         }
       ],
-      "title": "Total connections",
-      "type": "stat"
+      "title": "Unmute sessions (24h window)",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -463,7 +495,7 @@
           "refId": "A"
         }
       ],
-      "title": "Median session duration (24h sliding window)",
+      "title": "Median session duration (24h window)",
       "type": "timeseries"
     },
     {
@@ -474,7 +506,40 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -498,49 +563,40 @@
         "x": 16,
         "y": 8
       },
-      "id": 11,
+      "id": 17,
       "options": {
-        "displayMode": "gradient",
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": false
         },
-        "maxVizHeight": 300,
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "namePlacement": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
       },
       "pluginVersion": "11.6.1",
       "targets": [
         {
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum by(le) (increase(worker_session_duration_bucket[1d]))",
-          "format": "heatmap",
+          "exemplar": false,
+          "expr": "sum by(__name__) (increase(py_connect[24h])) / sum by(__name__) (increase(worker_sessions_total[24h]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "interval": "",
+          "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Session duration (s)",
-      "type": "bargauge"
+      "title": "TTS connections / Unmute connections ratio",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -1074,6 +1130,76 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 32
+      },
+      "id": 16,
+      "interval": "60m",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.1",
+      "targets": [
+        {
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by(__name__) (increase(worker_sessions_total[3650d]))",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Total connections within log retention range",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "description": "The TTS server runs in a batched mode, for everybody at once. To generate audio in real time, the step must be faster than 0.08s.",
       "fieldConfig": {
         "defaults": {
@@ -1150,6 +1276,82 @@
       ],
       "title": "TTS model step (s)",
       "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 40
+      },
+      "id": 11,
+      "options": {
+        "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.6.1",
+      "targets": [
+        {
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "expr": "sum by(le) (increase(worker_session_duration_bucket[1d]))",
+          "format": "heatmap",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "interval": "",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Session duration (s)",
+      "type": "bargauge"
     }
   ],
   "preload": false,
@@ -1167,5 +1369,5 @@
   "timezone": "browser",
   "title": "unmute-monitoring",
   "uid": "cep53ia62t05cc",
-  "version": 7
+  "version": 1
 }

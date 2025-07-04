@@ -96,7 +96,6 @@ services:
               count: all
               capabilities: [gpu]
 
-
   llm:
     image: vllm/vllm-openai:v0.9.1
     command:

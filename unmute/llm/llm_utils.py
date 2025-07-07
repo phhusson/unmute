@@ -159,5 +159,12 @@ class VLLMStream:
         async with stream:
             async for chunk in stream:
                 chunk_content = chunk.choices[0].delta.content
-                assert isinstance(chunk_content, str)
+
+                if not chunk_content:
+                    # This happens on the first message, see:
+                    # https://platform.openai.com/docs/guides/streaming-responses#read-the-responses
+                    # Also ignore `null` chunks, which is what llama.cpp does:
+                    # https://github.com/ggml-org/llama.cpp/blob/6491d6e4f1caf0ad2221865b4249ae6938a6308c/tools/server/tests/unit/test_chat_completion.py#L338
+                    continue
+
                 yield chunk_content

@@ -133,6 +133,11 @@ class QuestManager:
             return
         await quest.remove()
 
+    async def replace(self, new_instance: str, name: str):
+        await self.remove(name)
+        self.quests[name] = self.quests[new_instance]
+        del self.quests[new_instance]
+
     @staticmethod
     def _one_is_done(name: str, agg_future: asyncio.Future, future: asyncio.Future):
         logger.debug("Quest %s is done.", name)

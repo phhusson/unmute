@@ -111,10 +111,14 @@ class UnmuteHandler(AsyncStreamHandler):
         self.debug_plot_data: list[dict] = []
         self.last_additional_output_update = self.audio_received_sec()
 
+        self.new_information = False
+
         if AUDIO_INPUT_OVERRIDE is not None:
             self.audio_input_override = AudioInputOverride(AUDIO_INPUT_OVERRIDE)
         else:
             self.audio_input_override = None
+        self.tts_i = 0
+        self.tts_current = 0
 
     async def cleanup(self):
         if self.recorder is not None:
@@ -223,6 +227,20 @@ class UnmuteHandler(AsyncStreamHandler):
 
         try:
             async for delta in rechunk_to_words(llm.chat_completion(messages)):
+                print(f"Received delta '{delta}'")
+                if delta.startswith(' !!'):
+                    try:
+                        tts = await quest.get()
+                        await tts.send(TTSClientEosMessage())
+                    except Exception:
+                        pass
+                    continue
+                if delta.startswith(' ??'):
+                    print("Preparing a new TTS")
+                    self.new_information = True
+                    # Switching to a new TTS
+                    quest = await self.start_up_tts(generating_message_i, lurking = True)
+                    continue
                 await self.output_queue.put(
                     ora.UnmuteResponseTextDeltaReady(delta=delta)
                 )
@@ -467,7 +485,13 @@ class UnmuteHandler(AsyncStreamHandler):
         except websockets.ConnectionClosed:
             logger.info("STT connection closed while receiving messages.")
 
-    async def start_up_tts(self, generating_message_i: int) -> Quest[TextToSpeech]:
+    async def start_up_tts(self, generating_message_i: int, lurking: bool = False) -> Quest[TextToSpeech]:
+        if lurking:
+            self.tts_i += 1
+        else:
+            self.tts_i += 1
+            self.tts_current = self.tts_i
+        my_i = self.tts_i
         async def _init() -> TextToSpeech:
             factory = partial(
                 TextToSpeech,
@@ -498,21 +522,33 @@ class UnmuteHandler(AsyncStreamHandler):
             raise AssertionError("Too many unexpected packets.")
 
         async def _run(tts: TextToSpeech):
-            await self._tts_loop(tts, generating_message_i)
+            await self._tts_loop(tts, generating_message_i, my_i)
 
         async def _close(tts: TextToSpeech):
             await tts.shutdown()
 
+        if lurking:
+            # Note: We might replace an already started tts-future
+            # This can happen if we receive 2 interruptions within one sentence
+            # This is fine, quest_manager will close the quest that has been started
+            return await self.quest_manager.add(Quest("tts-future", _init, _run, _close))
         return await self.quest_manager.add(Quest("tts", _init, _run, _close))
 
-    async def _tts_loop(self, tts: TextToSpeech, generating_message_i: int):
+    async def _tts_loop(self, tts: TextToSpeech, generating_message_i: int, my_i: int):
         # On interruption, we swap the output queue. This will ensure that this worker
         # can never accidentally push to the new queue if it's interrupted.
         output_queue = self.output_queue
+        replacing_tts = False
         try:
             audio_started = None
 
+            while my_i > self.tts_current:
+                await asyncio.sleep(0.1)
+
+            will_switch = None
             async for message in tts:
+                if my_i != self.tts_current:
+                    break
                 if audio_started is not None:
                     time_since_start = self.audio_received_sec() - audio_started
                     time_received = tts.received_samples / self.input_sample_rate
@@ -545,23 +581,44 @@ class UnmuteHandler(AsyncStreamHandler):
                     if audio_started is None:
                         audio_started = self.audio_received_sec()
                 elif isinstance(message, TTSTextMessage):
+                    print(f"TTS message {message}")
                     await output_queue.put(ora.ResponseTextDelta(delta=message.text))
                     await self.add_chat_message_delta(
                         message.text,
                         "assistant",
                         generating_message_i=generating_message_i,
                     )
+                    if '.' in message.text and self.new_information:
+                        # Number of audio packets we still let through before switching
+                        will_switch = 2
+                        
                 else:
                     logger.warning("Got unexpected message from TTS: %s", message.type)
+
+                if will_switch:
+                    will_switch -= 1
+                if will_switch == 0:
+                    print("Aborting this TTS")
+                    self.tts_current = self.tts_i
+                    self.new_information = False
+                    await self.quest_manager.replace("tts-future", "tts")
+                    replacing_tts = True
+                    break
 
         except websockets.ConnectionClosedError as e:
             logger.error(f"TTS connection closed with an error: {e}")
 
         # Push some silence to flush the Opus state.
         # Not sure that this is actually needed.
-        await output_queue.put(
-            (SAMPLE_RATE, np.zeros(SAMPLES_PER_FRAME, dtype=np.float32))
-        )
+        if replacing_tts:
+            # Add 800ms blank for transition
+            await output_queue.put(
+                (SAMPLE_RATE, np.zeros(int(SAMPLES_PER_FRAME + SAMPLE_RATE * 0.8), dtype=np.float32))
+            )
+        else:
+            await output_queue.put(
+                (SAMPLE_RATE, np.zeros(SAMPLES_PER_FRAME, dtype=np.float32))
+            )
 
         message = self.chatbot.last_message("assistant")
         if message is None:
@@ -574,9 +631,10 @@ class UnmuteHandler(AsyncStreamHandler):
         await self.output_queue.put(ora.ResponseAudioDone())
 
         # Signal that the turn is over by adding an empty message.
-        await self.add_chat_message_delta("", "user")
+        if not replacing_tts:
+            await self.add_chat_message_delta("", "user")
+            await asyncio.sleep(1)
 
-        await asyncio.sleep(1)
         await self.check_for_bot_goodbye()
         self.waiting_for_user_start_time = self.audio_received_sec()
 

@@ -158,6 +158,8 @@ class VLLMStream:
 
         async with stream:
             async for chunk in stream:
+                if not chunk.choices:
+                    continue
                 chunk_content = chunk.choices[0].delta.content
 
                 if not chunk_content:

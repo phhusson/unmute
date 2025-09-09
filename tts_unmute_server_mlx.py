@@ -2,13 +2,13 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "huggingface_hub",
-#     "moshi_mlx==0.2.12",
 #     "numpy",
 #     "msgpack",
 #     "uvicorn",
+#     "coremltools",
 #     "mlx",
 #     "websockets",
-#     "fastrtc",
+#     "fastrtc>=0.0.32",
 #     "rustymimi",
 #     "sentencepiece",
 #     "fastapi",
@@ -27,6 +27,8 @@ import queue
 import sys
 import time
 import librosa
+import threading
+import concurrent.futures
 import cProfile
 
 import mlx
@@ -73,8 +75,6 @@ def _make_null(
 ) -> list[ConditionAttributes]:
     # When using CFG, returns the null conditions.
     return dropout_all_conditions(all_attributes)
-
-
 @dataclass
 class TTSGen:
     tts_model: TTSModel
@@ -157,7 +157,7 @@ class TTSGen:
         while len(self.state.entries) > self.tts_model.machine.second_stream_ahead:
             await self._step()
 
-    async def __step(self):
+    def __step_sync(self):
         startts = time.time()
         if self.lastts:
             print("AA", time.time() - self.lastts)
@@ -173,23 +173,23 @@ class TTSGen:
         frame = self.lm_gen.last_audio_tokens()
         self.offset += 1
         self.times.append(time.time() - startts)
-        if frame is not None:
-            if self.on_frame is not None:
-                await self.on_frame(frame)
         print("AZ", time.time() - startts)
         if len(self.times) > 2:
-            print("\tA%", sum(self.times[-20:]) / len(self.times[-20:]))
+            print("	A%", sum(self.times[-20:]) / len(self.times[-20:]))
         self.lastts = time.time()
+        return frame
 
     async def _step(self):
         if len(self.times) == 35:
             #mx.metal.start_capture("mlx_trace.gputrace")
-            p = await self.__step()
+            frame = await asyncio.to_thread(self.__step_sync)
             #mx.metal.stop_capture()
-            return p
-                
         else:
-            return await self.__step()
+            frame = await asyncio.to_thread(self.__step_sync)
+
+        if frame is not None:
+            if self.on_frame is not None:
+                await self.on_frame(frame)
 
     def append_entry(self, entry):
         self.state.entries.append(entry)
@@ -279,6 +279,10 @@ log("info", f"loading the audio tokenizer {mimi_weights}")
 generated_codebooks = lm_config.generated_codebooks
 audio_tokenizer = models.mimi.Mimi(models.mimi_202407(generated_codebooks))
 audio_tokenizer.load_pytorch_weights(str(mimi_weights), strict=True)
+del audio_tokenizer.encoder
+del audio_tokenizer.decoder
+del audio_tokenizer.encoder_transformer
+del audio_tokenizer.decoder_transformer
 #model.set_dtype(mx.bfloat16)
 #nn.quantize(audio_tokenizer, bits=8)
 
@@ -332,6 +336,8 @@ async def send(ws: WebSocket, data: dict) -> None:
     to_send = msgpack.packb(data, use_bin_type=True, use_single_float=True)
     await ws.send_bytes(to_send)
 
+
+
 @app.websocket("/api/tts_streaming")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -340,44 +346,55 @@ async def websocket_endpoint(websocket: WebSocket):
     audio_tokenizer.reset_state()
     model.reset_state()
 
-    async def _on_frame(frame):
-        if (frame == -1).any():
-            return
-        _pcm = tts_model.mimi.decode_step(frame[:, :, None])
-        _pcm = np.array(mx.clip(_pcm[0, 0], -1, 1)).tolist()
-        print("Sending audio")
-        audio_message = {"type": "Audio", "pcm": _pcm}
-        await websocket.send_bytes(msgpack.packb(audio_message))
-        print("Done sending audio")
+    q = asyncio.Queue()
+    async def tts_coroutine():
+        startts = time.time()
+        async def _on_frame(frame):
+            if (frame == -1).any():
+                return
+            _pcm = tts_model.mimi.decode_step(frame[:, :, None])
+            _pcm = np.array(mx.clip(_pcm[0, 0], -1, 1)).tolist()
+            print("Sending audio")
+            audio_message = {"type": "Audio", "pcm": _pcm}
+            await websocket.send_bytes(msgpack.packb(audio_message))
+            print("Done sending audio")
 
-    print("B")
-    gen = TTSGen(tts_model, all_attributes, on_frame=_on_frame)
-    print("C")
+        print("Start of tts_corountine")
+        gen = TTSGen(tts_model, all_attributes, on_frame=_on_frame)
+        while True:
+            print("Getting element from queue...")
+            entry = await q.get()
+            print("Got from queue", entry)
+            if not entry:
+                break
+            print("Entry", entry)
+            gen.append_entry(entry)
+            await gen.process()
+            text_message = {"type": "Text", "text": entry.text, "start_s": time.time() - startts, "stop_s" : time.time() - startts + 0.2}
+            await websocket.send_bytes(msgpack.packb(text_message))
+        await gen.process_last()
 
-    startts = time.time()
-    first_turn = True
-    while True:
-        print("D")
-        message = await websocket.receive()
-        print("msg", message)
-        if message['type'] == 'websocket.disconnect':
-            return
-        message = msgpack.unpackb(message['bytes'])
-        print("msg", message)
-        if message['type'] == 'Text':
-            entries = prepare_script(tts_model, message['text'], first_turn=first_turn)
-            for entry in entries:
-                print("Entry", entry)
-                # FIXME
-                text_message = {"type": "Text", "text": entry.text, "start_s": time.time() - startts, "stop_s" : time.time() - startts + 0.2}
-                await websocket.send_bytes(msgpack.packb(text_message))
-                gen.append_entry(entry)
-                await gen.process()
-            first_turn = False
-        if message['type'] == 'Eos':
-            await gen.process_last()
-            return
-
+    async def websocket_receive_coroutine():
+        first_turn = True
+        while True:
+            print("D")
+            message = await websocket.receive()
+            print("msg", message)
+            if message['type'] == 'websocket.disconnect':
+                return
+            message = msgpack.unpackb(message['bytes'])
+            print("msg", message)
+            if message['type'] == 'Text':
+                entries = prepare_script(tts_model, message['text'], first_turn=first_turn)
+                for entry in entries:
+                    await q.put(entry)
+                first_turn = False
+            if message['type'] == 'Eos':
+                await q.put(None)
+                return
+    async with asyncio.TaskGroup() as tg:
+        task1 = tg.create_task(websocket_receive_coroutine())
+        task2 = tg.create_task(tts_coroutine())
 
 if __name__ == "__main__":
     import uvicorn

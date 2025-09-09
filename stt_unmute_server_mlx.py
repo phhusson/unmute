@@ -2,13 +2,13 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "huggingface_hub",
-#     "moshi_mlx==0.2.12",
 #     "numpy",
 #     "msgpack",
 #     "uvicorn",
 #     "mlx",
+#     "coremltools",
 #     "websockets",
-#     "fastrtc",
+#     "fastrtc>=0.0.32",
 #     "rustymimi",
 #     "sentencepiece",
 #     "fastapi",
@@ -108,11 +108,20 @@ for layer in model.transformer.layers:
     nn.quantize(layer.gating, bits=4)
 
 text_tokenizer = sentencepiece.SentencePieceProcessor(tokenizer)
+
+#for token_id in range(text_tokenizer.get_piece_size()):
+#    token = text_tokenizer.id_to_piece(token_id)
+#    print(f"Token: {token}, ID: {token_id}")
+
 generated_codebooks = lm_config.generated_codebooks
 other_codebooks = lm_config.other_codebooks
 mimi_codebooks = max(generated_codebooks, other_codebooks)
 audio_tokenizer = models.mimi.Mimi(models.mimi_202407(32))
 audio_tokenizer.load_pytorch_weights(str(mimi_weights), strict=True)
+del audio_tokenizer.encoder
+del audio_tokenizer.decoder
+del audio_tokenizer.encoder_transformer
+del audio_tokenizer.decoder_transformer
 print("warming up the model")
 model.warmup()
 
@@ -142,6 +151,13 @@ async def websocket_endpoint(websocket: WebSocket):
         check=False,
     )
 
+    def generate(block):
+        other_audio_tokens = audio_tokenizer.encode_step(block[None, 0:1])
+        other_audio_tokens = mx.array(other_audio_tokens).transpose(0,2,1)[:,:,:other_codebooks]
+        text_token, vad_heads = gen.step_with_extra_heads(other_audio_tokens[0])
+        return text_token, vad_heads
+
+
     try:
         current_time = 0.0
 
@@ -163,11 +179,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 buffer = buffer[blocksize:]
                 block = np.array([block], dtype='f')
                 start = time.time()
-                other_audio_tokens = audio_tokenizer.encode_step(block[None, 0:1])
-                other_audio_tokens = mx.array(other_audio_tokens).transpose(0,2,1)[:,:,:other_codebooks]
-                text_token, vad_heads = gen.step_with_extra_heads(other_audio_tokens[0])
+                text_token, vad_heads = await asyncio.to_thread(generate, block)
                 text_token = text_token[0].item()
-                audio_tokens = gen.last_audio_tokens()
                 print("M", time.time()-start)
                 _text = None
                 if text_token not in (0, 3):

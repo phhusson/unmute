@@ -536,6 +536,7 @@ class UnmuteHandler(AsyncStreamHandler):
                     t = self.tts_output_stopwatch.stop()
                     if t is not None:
                         self.debug_dict["timing"]["tts_audio"] = t
+                        print("time to first audio tts", t)
 
                     audio = np.array(message.pcm, dtype=np.float32)
                     assert self.output_sample_rate == SAMPLE_RATE
